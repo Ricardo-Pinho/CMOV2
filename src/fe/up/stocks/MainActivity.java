@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.PixelFormat;
 import android.view.Menu;
 import android.view.View;
 import android.view.Window;
@@ -29,6 +30,13 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
         addListenerOnButton1();
 		addListenerOnButton2();
+	}
+	
+	@Override
+	public void onAttachedToWindow() {
+	    super.onAttachedToWindow();
+	    Window window = getWindow();
+	    window.setFormat(PixelFormat.RGBA_8888);
 	}
 
 	@Override
