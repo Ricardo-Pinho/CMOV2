@@ -26,7 +26,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="Stock Consultant"
+            android:text="Stock Portfolio"
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:textColor="@color/white"
             android:textSize="32dp"
@@ -48,7 +48,7 @@
                     android:id="@+id/button1"
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
-                    android:text="Online Mode"
+                    android:text="Login"
                     android:textColor="@color/white"
                     android:layout_weight="1" />
             </TableRow>
@@ -56,32 +56,16 @@
             <TableRow
                 android:id="@+id/tableRow2"
                	android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:layout_marginBottom="20dp" >
+                android:layout_height="fill_parent" >
 
                 <Button
                     android:id="@+id/button2"
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
-                    android:text="Offline Mode"
+                    android:text="Register"
                     android:layout_weight="1"
                     android:textColor="@color/white" />
-            </TableRow>
-            
-            <TableRow
-	                android:id="@+id/tableRow3"
-	               android:layout_width="fill_parent"
-	                android:layout_height="fill_parent" >
-	
-	                <Button
-	                    android:id="@+id/button3"
-	                    android:layout_width="fill_parent"
-	                    android:layout_height="wrap_content"
-	                    android:text="Set Bus Id"
-	                    android:layout_weight="1"
-	                    android:textColor="@color/white" />
-	            </TableRow>
-            
+            </TableRow>          
            
         </TableLayout>
 	</LinearLayout>
