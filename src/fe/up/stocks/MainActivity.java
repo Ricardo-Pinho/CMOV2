@@ -1,7 +1,6 @@
 package fe.up.stocks;
 
 
-import fe.up.stocks.R;
 
 import android.os.Bundle;
 import android.app.Activity;
