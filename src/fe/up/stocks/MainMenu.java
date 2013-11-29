@@ -2,158 +2,71 @@ package fe.up.stocks;
 
 
 
-import android.app.ActionBar;
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.res.Configuration;
+
 import android.os.Bundle;
-import android.support.v4.app.ActionBarDrawerToggle;
-import android.support.v4.widget.DrawerLayout;
-import android.util.Log;
-import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
-import android.view.View.OnClickListener;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.TextView.OnEditorActionListener;
-import android.widget.Toast;
 
-public class MainMenu extends Activity {
-
-	private String[] mPlanetTitles;
-    private DrawerLayout mDrawerLayout;
-    private ListView mDrawerList;
-  private ActionBarDrawerToggle mDrawerToggle;
-  private CharSequence title;
-
+public class MainMenu extends AbstractNavDrawerActivity {
+   
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        title = getActionBar().getTitle();
-        mPlanetTitles = getResources().getStringArray(R.array.operating_systems);
-        System.out.println(mPlanetTitles.length);
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        mDrawerList = (ListView) findViewById(R.id.left_drawer);
-
-        // Set the adapter for the list view
-        mDrawerList.setAdapter(new ArrayAdapter<String>(this,
-                R.layout.drawer_item,R.id.content, mPlanetTitles));
-        // Set the list's click listener
-        mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
-        
-        mDrawerToggle = new ActionBarDrawerToggle(this,                  /* host Activity */
-                mDrawerLayout,         /* DrawerLayout object */
-                R.drawable.ic_drawer,  /* nav drawer icon to replace 'Up' caret */
-                R.string.drawer_open,  /* "open drawer" description */
-                R.string.drawer_close  /* "close drawer" description */) {
-
-            
-/** Called when a drawer has settled in a completely closed state. */
-
-            public void onDrawerClosed(View view) {
-                getActionBar().setTitle(title);
-            }
-
-            
-/** Called when a drawer has settled in a completely open state. */
-
-            public void onDrawerOpened(View drawerView) {
-                getActionBar().setTitle("Open Drawer");
-            }
-        };
-
-        // Set the drawer toggle as the DrawerListener
-        mDrawerLayout.setDrawerListener(mDrawerToggle);
-
-        getActionBar().setDisplayHomeAsUpEnabled(true);
-        getActionBar().setHomeButtonEnabled(true);
-        
-
-    }
-    
-    private class DrawerItemClickListener implements ListView.OnItemClickListener {
-        @Override
-        public void onItemClick(AdapterView parent, View view, int position, long id) {
-            selectItem(position);
+        if ( savedInstanceState == null ) {
+            getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new MainFragment()).commit();
         }
     }
-    
+   
     @Override
-    protected void onPostCreate(Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-        // Sync the toggle state after onRestoreInstanceState has occurred.
-        mDrawerToggle.syncState();
+    protected NavDrawerActivityConfiguration getNavDrawerConfiguration() {
+       
+        NavDrawerItem[] menu = new NavDrawerItem[] {
+                NavMenuSection.create( 100, "Account"),
+                NavMenuItem.create(101,"Profile", "navdrawer_profile", true, this),
+                NavMenuItem.create(102, "Manage Stocks", "navdrawer_manage_stocks", true, this),
+                NavMenuItem.create(103, "Options", "navdrawer_options", true, this),
+                NavMenuSection.create(200, "Stocks"),
+                NavMenuItem.create(201, "AAPL", "navdrawer_aapl", true, this),
+                NavMenuItem.create(202, "AMZN", "navdrawer_amzn", true, this),
+                NavMenuItem.create(203, "CSCO", "navdrawer_csco", true, this),
+                NavMenuItem.create(203, "DELL", "navdrawer_dell", true, this),
+                NavMenuItem.create(203, "FB", "navdrawer_fb", true, this),
+                NavMenuItem.create(203, "GOOG", "navdrawer_goog", true, this),
+                NavMenuItem.create(203, "HPQ", "navdrawer_hpq", true, this),
+                NavMenuItem.create(203, "IBM", "navdrawer_ibm", true, this),
+                NavMenuItem.create(203, "MSFT", "navdrawer_msft", true, this),
+                NavMenuItem.create(203, "ORCL", "navdrawer_orcl", true, this)};
+       
+        NavDrawerActivityConfiguration navDrawerActivityConfiguration = new NavDrawerActivityConfiguration();
+        navDrawerActivityConfiguration.setMainLayout(R.layout.main_menu);
+        navDrawerActivityConfiguration.setDrawerLayoutId(R.id.drawer_layout);
+        navDrawerActivityConfiguration.setLeftDrawerId(R.id.left_drawer);
+        navDrawerActivityConfiguration.setNavItems(menu);
+        navDrawerActivityConfiguration.setDrawerShadow(R.drawable.drawer_shadow);      
+        navDrawerActivityConfiguration.setDrawerOpenDesc(R.string.drawer_open);
+        navDrawerActivityConfiguration.setDrawerCloseDesc(R.string.drawer_close);
+        navDrawerActivityConfiguration.setBaseAdapter(
+            new NavDrawerAdapter(this, R.layout.navdrawer_item, menu ));
+        return navDrawerActivityConfiguration;
     }
+   
+	@Override
+	public void onBackPressed() 
+	{
 
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        mDrawerToggle.onConfigurationChanged(newConfig);
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-      getMenuInflater().inflate(R.menu.main, menu);
-      return super.onCreateOptionsMenu(menu);
-    }
-    
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Pass the event to ActionBarDrawerToggle, if it returns
-        // true, then it has handled the app icon touch event
-        if (mDrawerToggle.onOptionsItemSelected(item)) {
-          return true;
-        }
-        // Handle your other action bar items...
-        switch (item.getItemId()) {
-    case R.id.action_settings:
-      Toast.makeText(this, "Settings selected", Toast.LENGTH_LONG).show();
-      break;
-
-    default:
-      break;
-    }
-        return super.onOptionsItemSelected(item);
-    }
-
-
-    
-/** Swaps fragments in the main content view */
-
-    private void selectItem(int position) {
-        // create a new fragment and specify the planet to show based on position
-        Fragment fragment = new OpertingSystemFragment();
-        Bundle args = new Bundle();
-        args.putInt(OpertingSystemFragment.ARG_OS, position);
-        fragment.setArguments(args);
-
-        // Insert the fragment by replacing any existing fragment
-        FragmentManager fragmentManager = getFragmentManager();
-        fragmentManager.beginTransaction()
-                       .replace(R.id.content_frame, fragment)
-                       .commit();
-
-        // Highlight the selected item, update the title, and close the drawer
-        mDrawerList.setItemChecked(position, true);
-        getActionBar().setTitle((mPlanetTitles[position]));
-        mDrawerLayout.closeDrawer(mDrawerList);
-    }
-		
-
+	    this.finish();
+	    overridePendingTransition  (R.anim.left_slide_in, R.anim.left_slide_out);
+	    return;
 	}
+    
+    @Override
+    protected void onNavItemSelected(int id) {
+        switch ((int)id) {
+        /*case 101:
+            getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new FriendMainFragment()).commit();
+            break;
+        case 102:
+            getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new AirportFragment()).commit();
+            break;*/
+        }
+    }
+}
 

@@ -13,6 +13,7 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -26,6 +27,7 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.TextView;
 
 
 public class Register extends Activity {
@@ -45,6 +47,20 @@ public class Register extends Activity {
 		et1 = (EditText) findViewById(R.id.name);
 	    et2 = (EditText) findViewById(R.id.username);
 	    et3 = (EditText) findViewById(R.id.password);
+	    
+		Typeface blockFonts = Typeface.createFromAsset(getAssets(),"fonts/Ubuntu.ttf");
+		Typeface blockFonts2 = Typeface.createFromAsset(getAssets(),"fonts/Ubuntu-M.ttf");
+		Button txtSampleTxt1 = (Button) findViewById(R.id.register_button);
+		TextView txtSampleTxt4 = (TextView) findViewById(R.id.textView2);
+		TextView txtSampleTxt5 = (TextView) findViewById(R.id.textView3);
+		TextView txtSampleTxt7 = (TextView) findViewById(R.id.textView4);
+		txtSampleTxt4.setTypeface(blockFonts);
+		txtSampleTxt5.setTypeface(blockFonts);
+		txtSampleTxt7.setTypeface(blockFonts);
+		txtSampleTxt1.setTypeface(blockFonts2);
+		et1.setTypeface(blockFonts2);
+		et2.setTypeface(blockFonts2);
+		et3.setTypeface(blockFonts2);
 	}
 
 	@Override

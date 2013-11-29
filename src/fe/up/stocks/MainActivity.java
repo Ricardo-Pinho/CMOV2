@@ -7,12 +7,14 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
+import android.graphics.Typeface;
 import android.view.Menu;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.TextView;
 
 public class MainActivity extends Activity {
 
@@ -27,9 +29,21 @@ public class MainActivity extends Activity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
             WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		setContentView(R.layout.activity_main);
+		
+		Typeface blockFonts = Typeface.createFromAsset(getAssets(),"fonts/Ubuntu.ttf");
+		Typeface blockFonts2 = Typeface.createFromAsset(getAssets(),"fonts/Ubuntu-M.ttf");
+		TextView txtSampleTxt = (TextView) findViewById(R.id.textView1);
+		Button txtSampleTxt1 = (Button) findViewById(R.id.button1);
+		Button txtSampleTxt2 = (Button) findViewById(R.id.button2);
+		txtSampleTxt.setTypeface(blockFonts);
+		txtSampleTxt1.setTypeface(blockFonts2);
+		txtSampleTxt2.setTypeface(blockFonts2);
+		
         addListenerOnButton1();
 		addListenerOnButton2();
 	}
+	
+	
 	
 	@Override
 	public void onAttachedToWindow() {
@@ -79,7 +93,7 @@ public class MainActivity extends Activity {
  
 			    Intent intent = new Intent(context, Register.class);
                 startActivity(intent);
-                overridePendingTransition  (R.anim.right_slide_in, R.anim.right_slide_out);
+                overridePendingTransition  (R.anim.left_slide_in, R.anim.left_slide_out);
  
 			}
  
@@ -87,13 +101,13 @@ public class MainActivity extends Activity {
  
 	}
 	
-	@Override
+	/*@Override
 	public void onBackPressed() 
 	{
 
 	    this.finish();
 	    overridePendingTransition  (R.anim.right_slide_in, R.anim.right_slide_out);
 	    return;
-	}
+	}*/
 
 }

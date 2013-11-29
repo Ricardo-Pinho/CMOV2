@@ -9,6 +9,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -19,6 +20,7 @@ import android.view.WindowManager;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 public class Login extends Activity {
 	private Button login;
@@ -34,6 +36,19 @@ public class Login extends Activity {
             WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		setContentView(R.layout.login);
 		addListenerOnButton();
+		
+		Typeface blockFonts = Typeface.createFromAsset(getAssets(),"fonts/Ubuntu.ttf");
+		Typeface blockFonts2 = Typeface.createFromAsset(getAssets(),"fonts/Ubuntu-M.ttf");
+		Button txtSampleTxt1 = (Button) findViewById(R.id.login_button);
+		EditText txtSampleTxt2 = (EditText) findViewById(R.id.username);
+		EditText txtSampleTxt3 = (EditText) findViewById(R.id.password);
+		TextView txtSampleTxt4 = (TextView) findViewById(R.id.textView2);
+		TextView txtSampleTxt5 = (TextView) findViewById(R.id.textView3);
+		txtSampleTxt4.setTypeface(blockFonts);
+		txtSampleTxt5.setTypeface(blockFonts);
+		txtSampleTxt1.setTypeface(blockFonts2);
+		txtSampleTxt2.setTypeface(blockFonts2);
+		txtSampleTxt3.setTypeface(blockFonts2);
 	}
 
 	@Override
@@ -48,7 +63,7 @@ public class Login extends Activity {
 	{
 
 	    this.finish();
-	    overridePendingTransition  (R.anim.right_slide_in, R.anim.right_slide_out);
+	    overridePendingTransition  (R.anim.left_slide_in, R.anim.left_slide_out);
 	    return;
 	}
 

@@ -12,4 +12,4 @@
         android:layout_gravity="center"
         android:textAppearance="?android:attr/textAppearanceLarge" />
 
-</LinearLayout>
+</LinearLayout> 

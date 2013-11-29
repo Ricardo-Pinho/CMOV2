@@ -23,7 +23,7 @@
 	        android:layout_height="match_parent"
 	        android:layout_below="@+id/textView1"
 	        android:layout_centerHorizontal="true"
-	        android:layout_marginTop="50dp" >
+	        android:layout_marginTop="30dp" >
 	
 	        <TableRow
 	            android:id="@+id/tableRow1"
@@ -38,8 +38,7 @@
 	                android:textAppearance="?android:attr/textAppearanceMedium"
 	                android:layout_gravity="center"
 	                android:textColor="@color/white"
-	                android:layout_marginBottom = "2pt"
-	                android:textSize="20pt" />
+	                android:textSize="15pt" />
 	        </TableRow>
 	
 	        <TableRow
@@ -54,8 +53,8 @@
 	                android:minWidth="150dp"
 	                android:text="test"
 	                android:textColor="@color/white"
-		            android:layout_marginTop = "10pt"
-		            android:textSize="20pt" />
+		            android:layout_marginTop = "5pt"
+		            android:textSize="15pt" />
 	
 	        </TableRow>
 	
@@ -73,9 +72,8 @@
 	                android:textAppearance="?android:attr/textAppearanceMedium"
 	                android:layout_gravity="center"
 	                android:textColor="@color/white"
-	                android:layout_marginTop = "10pt"
-	                android:layout_marginBottom = "2pt"
-	                android:textSize="20pt" />
+	                android:layout_marginTop = "5pt"
+	                android:textSize="15pt" />
 	        </TableRow>
 	
 	        <TableRow
@@ -91,8 +89,8 @@
 	                android:minWidth="150dp"
 	                android:text="123456"
 	                android:textColor="@color/white"
-		            android:layout_marginTop = "10pt"
-		            android:textSize="20pt" />
+		            android:layout_marginTop = "5pt"
+		            android:textSize="15pt" />
 	
 	        </TableRow>
 	
@@ -109,10 +107,11 @@
 	                android:text="Log In"
 	                android:background="@drawable/button_customize"
 		            android:padding="10pt"
-		            android:layout_marginTop = "15pt"
+		            android:layout_marginTop = "10pt"
 	                android:textColor="@color/white"
-	                android:textSize="25pt" />
+	                android:textSize="20pt" />
 	        </TableRow>
 	    </TableLayout>
+	
     </RelativeLayout>
 </ScrollView>

@@ -5,9 +5,10 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.TextView;
 
-public class OpertingSystemFragment extends Fragment {
+public class WebViewFragment extends Fragment {
 	  public static final String ARG_OS= "OS";
 	  private String string;
 	  @Override
@@ -26,4 +27,4 @@ public class OpertingSystemFragment extends Fragment {
 	  public void setArguments(Bundle args) {
 	    string = args.getString(ARG_OS);
 	  }
-}
+	} 
