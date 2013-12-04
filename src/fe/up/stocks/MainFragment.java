@@ -3,7 +3,6 @@ package fe.up.stocks;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.ParseException;
@@ -12,10 +11,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 
 import com.jjoe64.graphview.BarGraphView;
@@ -28,15 +23,10 @@ import com.jjoe64.graphview.GraphView.GraphViewData;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.pm.ActivityInfo;
-import android.graphics.Color;
-import android.graphics.Paint.Align;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Pair;
 import android.view.Gravity;
@@ -46,12 +36,10 @@ import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
-import android.widget.TextView;
 
 
 
@@ -96,14 +84,12 @@ public class MainFragment extends Fragment {
 				final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 				MainActivity.graphs = new ArrayList<GraphView>(); 
 				stockGraph sg = new stockGraph();
-				sg.stockAbrev = "AAPL";
-				sg.stockName= "APPLE Inc.";
-				sg.id=1;
+				sg.stockAbrev = "AMZN";
+				sg.stockName= "Amazon.com Inc";
+				sg.id=2;
 				sg.endDate = Calendar.getInstance();
 				sg.beginDate = Calendar.getInstance();
 				sg.beginDate.add(Calendar.DATE, -31);
-				//Log.d("begin", sg.beginDate.getTime());
-				//Log.d("end", Long.toString(sg.endDate.getTime().);
 				boolean exists=false;
 				for(int i=0; i< MainActivity.sgraph.size();i++)
 				{
@@ -125,12 +111,14 @@ public class MainFragment extends Fragment {
 					MainActivity.sgraph.add(sg);
 				
 				sg = new stockGraph();
-				sg.stockAbrev = "AMZN";
-				sg.stockName= "Amazon.com Inc";
-				sg.id=2;
+				sg.stockAbrev = "AAPL";
+				sg.stockName= "APPLE Inc.";
+				sg.id=1;
 				sg.endDate = Calendar.getInstance();
 				sg.beginDate = Calendar.getInstance();
 				sg.beginDate.add(Calendar.DATE, -31);
+				//Log.d("begin", sg.beginDate.getTime());
+				//Log.d("end", Long.toString(sg.endDate.getTime().);
 				exists=false;
 				for(int i=0; i< MainActivity.sgraph.size();i++)
 				{
@@ -150,6 +138,7 @@ public class MainFragment extends Fragment {
 				}
 				if(!exists)
 					MainActivity.sgraph.add(sg);
+				
 				
 				sg = new stockGraph();
 				sg.stockAbrev = "CSCO";
@@ -589,7 +578,7 @@ public class MainFragment extends Fragment {
 							LL3.setOrientation(LinearLayout.VERTICAL);
 							LayoutParams LLParams3 = new LayoutParams(LayoutParams.MATCH_PARENT,250);
 							LLParams3.weight=1;
-							LL3.setId(1);
+							LL3.setId(i);
 							LL3.setLayoutParams(LLParams3);
 
 							MainActivity.graphs.add(graphView);
@@ -969,8 +958,8 @@ public class MainFragment extends Fragment {
     	        	break;
     	        }
     	        
-*/
-    	Log.i("button","btn"+selected_item);
+
+    	Log.i("button","btn"+selected_item);*/
     	}
     };
 }

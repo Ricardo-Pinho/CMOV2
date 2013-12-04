@@ -37,8 +37,8 @@ public class MainMenu extends AbstractNavDrawerActivity {
                 NavMenuItem.create(103, "Options", "navdrawer_options", true, this),
                 NavMenuSection.create(200, "Stock Market"),
                 NavMenuItem.create(201, "All", "navdrawer_all", true, this),
-                NavMenuItem.create(202, "AAPL", "navdrawer_aapl", true, this),
-                NavMenuItem.create(203, "AMZN", "navdrawer_amzn", true, this),
+                NavMenuItem.create(202, "AMZN", "navdrawer_amzn", true, this),
+                NavMenuItem.create(203, "AAPL", "navdrawer_aapl", true, this),
                 NavMenuItem.create(204, "CSCO", "navdrawer_csco", true, this),
                 NavMenuItem.create(205, "DELL", "navdrawer_dell", true, this),
                 NavMenuItem.create(206, "FB", "navdrawer_fb", true, this),
@@ -82,10 +82,10 @@ public class MainMenu extends AbstractNavDrawerActivity {
         	getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new MainFragment()).commit();
             break;
         case 202:
-            getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new AppleFragment()).commit();
-            break;
-        case 203:
             getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new AmazonFragment()).commit();
+            break;
+        /*case 203:
+            getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new AppleFragment()).commit();
             break;
         case 204:
             getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new CiscoFragment()).commit();
@@ -110,7 +110,7 @@ public class MainMenu extends AbstractNavDrawerActivity {
             break;
         case 211:
             getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new OracleFragment()).commit();
-            break;
+            break;*/
         }
     }
 }
