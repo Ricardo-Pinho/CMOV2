@@ -13,6 +13,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
@@ -29,14 +30,15 @@ public class User implements Serializable {
 	 */
 	public static final long serialVersionUID = 1L;
 	public String Name, Nickname, Password;
-	public ArrayList<Stock> stocks;
+	public HashMap<String,ArrayList<Stock>> stocks;
+	public int stocksNum; 
 	private byte[] encryptedPassword, salt;
 	public User()
 	{
 		Name="";
 		Nickname="Error";
 		Password="";
-		stocks = new ArrayList<Stock>();
+		stocks = new HashMap<String,ArrayList<Stock>>();
 	}
 	
 	public User(String Name, String Nickname, String Password)
@@ -44,17 +46,19 @@ public class User implements Serializable {
 		this.Name=Name;
 		this.Nickname=Nickname;
 		this.Password=Password;
-		stocks = new ArrayList<Stock>();
+		stocksNum=0;
+		stocks = new HashMap<String,ArrayList<Stock>>();
 	}
 	
-	public User(String Name, String Nickname, String Password, String Id, byte[] encryptedPassword, byte[] salt, ArrayList<Stock> stocks)
+	public User(String Name, String Nickname, String Password, String Id, byte[] encryptedPassword, byte[] salt, ArrayList<Stock> stocks, String stockname)
 	{
 		this.Name=Name;
 		this.Nickname=Nickname;
 		this.Password=Password;
 		this.encryptedPassword=encryptedPassword;
 		this.setSalt(salt);
-		this.stocks=stocks;
+		stocksNum=0;
+		this.stocks.put(stockname, stocks);
 	}
 	
 	public void Save()
@@ -113,6 +117,7 @@ public class User implements Serializable {
 			this.setEncryptedPassword(x.getEncryptedPassword());
 			this.setSalt(x.getSalt());
 			this.stocks = x.stocks;
+			this.stocksNum=x.stocksNum;
 			return false;
 		}catch (IOException e){ 
 			Log.d("Error", "Error Loading User.");

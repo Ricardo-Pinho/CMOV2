@@ -2,6 +2,10 @@ package fe.up.stocks;
 
 
 
+import java.util.ArrayList;
+
+import com.jjoe64.graphview.GraphView;
+
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Context;
@@ -18,7 +22,8 @@ import android.widget.TextView;
 
 public class MainActivity extends Activity {
 
-	
+	public static ArrayList<stockGraph> sgraph = new ArrayList<stockGraph>();
+	public static ArrayList<GraphView> graphs = new ArrayList<GraphView>();
 	public static User usr = new User();
 	private Button login;
 	private Button register;
