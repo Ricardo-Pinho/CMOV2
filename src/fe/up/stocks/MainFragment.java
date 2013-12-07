@@ -16,14 +16,18 @@ import java.util.Random;
 import com.jjoe64.graphview.BarGraphView;
 import com.jjoe64.graphview.CustomLabelFormatter;
 import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.GraphViewDataInterface;
 import com.jjoe64.graphview.GraphViewSeries;
 import com.jjoe64.graphview.LineGraphView;
+import com.jjoe64.graphview.ValueDependentColor;
 import com.jjoe64.graphview.GraphView.GraphViewData;
+import com.jjoe64.graphview.GraphViewSeries.GraphViewSeriesStyle;
 
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -48,6 +52,8 @@ public class MainFragment extends Fragment {
 	private final SimpleDateFormat dateFormat = new SimpleDateFormat("d/M");
 	private ProgressDialog pd;
 	private boolean firstRunning=true;
+	private double totaldiff=0;
+	private double minVal=0;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -74,7 +80,6 @@ public class MainFragment extends Fragment {
 				pd.setCancelable(false);
 				pd.setIndeterminate(true);
 				pd.show();
-				
 			}
 				
 			@Override
@@ -86,7 +91,7 @@ public class MainFragment extends Fragment {
 				stockGraph sg = new stockGraph();
 				sg.stockAbrev = "AMZN";
 				sg.stockName= "Amazon.com Inc";
-				sg.id=2;
+				sg.id=1;
 				sg.endDate = Calendar.getInstance();
 				sg.beginDate = Calendar.getInstance();
 				sg.beginDate.add(Calendar.DATE, -31);
@@ -113,7 +118,7 @@ public class MainFragment extends Fragment {
 				sg = new stockGraph();
 				sg.stockAbrev = "AAPL";
 				sg.stockName= "APPLE Inc.";
-				sg.id=1;
+				sg.id=2;
 				sg.endDate = Calendar.getInstance();
 				sg.beginDate = Calendar.getInstance();
 				sg.beginDate.add(Calendar.DATE, -31);
@@ -512,11 +517,11 @@ public class MainFragment extends Fragment {
 							}
 								else
 							{
-							int num = MainActivity.sgraph.get(i).NoPoints;
+							//int num = MainActivity.sgraph.get(i).NoPoints;
 							String GraphName=MainActivity.sgraph.get(i).stockName;
-							GraphViewData[] data = new GraphViewData[6];
-							int k=5;
-							int position=6;
+							GraphViewData[] data = new GraphViewData[5];
+							int k=4;
+							int position=5;
 							MainActivity.sgraph.get(i).pos=position;
 							for (int j=0; j<position; j++) {
 								long x=MainActivity.sgraph.get(i).points.get(j).second;
@@ -524,8 +529,28 @@ public class MainFragment extends Fragment {
 								data[k] = new GraphViewData(x, y); // next day
 								k--;
 							}
-							GraphViewSeries exampleSeries = new GraphViewSeries(data);
-							MainActivity.sgraph.get(i).gvs=exampleSeries;
+							totaldiff = (MainActivity.sgraph.get(i).maxY-MainActivity.sgraph.get(i).minY)/3;
+							minVal=MainActivity.sgraph.get(i).minY;
+							GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
+							seriesStyle1.setValueDependentColor(new ValueDependentColor() {
+								@Override
+								public int get(GraphViewDataInterface data) {
+									if(data.getY()<= (minVal+totaldiff*1))
+										return Color.rgb(0, 50, 150);
+									else if(data.getY()<= (minVal+totaldiff*2))
+										return Color.rgb(50, 100, 200);
+									else
+										return Color.rgb(100, 150, 255);
+									
+									
+									//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
+								}
+							});
+							GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
+							stockGraph gs = MainActivity.sgraph.get(i);
+							gs.gvs=exampleSeries;
+							MainActivity.sgraph.set(i, gs);
+							
 							GraphView graphView;
 							graphView = new LineGraphView(
 										getActivity()
@@ -592,15 +617,23 @@ public class MainFragment extends Fragment {
 							LayoutParams LLParams5 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
 							LLParams5.setMargins(0, 0, 80, 0);
 							
-							ImageButton btn = new ImageButton(getActivity());
-							btn.setImageResource(R.drawable.ic_action_previous_item);
-					        btn.setOnClickListener(buttonClickListener);
-					        btn.setBackgroundResource(R.drawable.button_customize);
-					        btn.setLayoutParams(LLParams5);
-					        btn.setTag(1);
-					        btn.setId(i+1);
+							LayoutParams LLParams7 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+							LLParams7.setMargins(20, 0, 0, 0);
+							
+							LayoutParams LLParams8 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+							LLParams8.setMargins(0, 0, 20, 0);
+							
+							
+							
+							ImageButton btnm1 = new ImageButton(getActivity());
+							btnm1.setImageResource(R.drawable.ic_action_rewind);
+							btnm1.setOnClickListener(buttonClickListener);
+							btnm1.setBackgroundResource(R.drawable.button_customize);
+							btnm1.setLayoutParams(LLParams8);
+							btnm1.setTag(5);
+							btnm1.setId(i+1);
 					        
-					        btn.setOnClickListener(new OnClickListener() {
+							btnm1.setOnClickListener(new OnClickListener() {
 					       	 
 								@Override
 								public void onClick(View v) {
@@ -639,7 +672,118 @@ public class MainFragment extends Fragment {
 												data[k] = new GraphViewData(x, y); // next day
 												k--;
 											}
-				        					GraphViewSeries exampleSeries = new GraphViewSeries(data);
+				        					totaldiff = (MainActivity.sgraph.get(i).maxY-MainActivity.sgraph.get(i).minY)/3;
+											minVal=MainActivity.sgraph.get(i).minY;
+											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
+											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
+												@Override
+												public int get(GraphViewDataInterface data) {
+													if(data.getY()<= (minVal+totaldiff*1))
+														return Color.rgb(0, 50, 150);
+													else if(data.getY()<= (minVal+totaldiff*2))
+														return Color.rgb(50, 100, 200);
+													else
+														return Color.rgb(100, 150, 255);
+													
+													
+													//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
+												}
+											});
+											GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
+				        					sg.gvs = exampleSeries;
+				        					MainActivity.sgraph.set(i, sg);
+				        					MainActivity.graphs.get(i).removeAllSeries();
+				        					MainActivity.graphs.get(i).addSeries(exampleSeries); // data
+				        					
+				        					/*MainActivity.graphs.get(i).setCustomLabelFormatter(new CustomLabelFormatter() {
+				        						@Override
+				        						public String formatLabel(double value, boolean isValueX) {
+				        							if (isValueX) {
+				        								Date d = new Date((long) value);
+				        								return dateFormat.format(d);
+				        							}
+				        							else{
+				        								return ("$"+Double.toString(value));
+				        							}
+				        						}
+				        					});*/
+				        					break;
+				        				}
+				        				//Log.i("test", "got here2");
+				    				}
+
+								}
+					        });
+										
+					        LL2.addView(btnm1);
+							
+							
+							
+							ImageButton btn = new ImageButton(getActivity());
+							btn.setImageResource(R.drawable.ic_action_previous_item);
+					        btn.setOnClickListener(buttonClickListener);
+					        btn.setBackgroundResource(R.drawable.button_customize);
+					        btn.setLayoutParams(LLParams5);
+					        btn.setTag(1);
+					        btn.setId(i+1);
+					        
+					        btn.setOnClickListener(new OnClickListener() {
+					       	 
+								@Override
+								public void onClick(View v) {
+									View p = (View)v.getParent();
+									View parent = (View)p.getParent();
+									for(int i=0; i<MainActivity.sgraph.size(); i++)
+				    				{
+										Random rand = new Random();
+										long now = new Date().getTime();
+				    					stockGraph sg = MainActivity.sgraph.get(i);
+				        				if(v.getId()==sg.id)
+				        				{
+				        					int position= sg.pos+1;
+				        					int begin = sg.pos-4;
+				        					if(!sg.turnLeft)
+			        						{
+			        							position=position+5;
+			        							begin=sg.pos+1;
+			        							sg.turnLeft=true;
+			        						}
+				        					
+				        					if(position>sg.NoPoints)
+				        						position=sg.NoPoints;
+				        					
+				        					int diff = position-begin;
+				        					MainActivity.sgraph.get(i).pos=position;
+				        					if(diff<5)
+				        					{
+				        						begin = begin-(5-diff);
+				        					}
+				        					int k=4;
+				        					GraphViewData[] data = new GraphViewData[5];
+				        					for (int j=begin; j<position; j++) {
+												long x=sg.points.get(j).second;
+												double y=sg.points.get(j).first;
+												data[k] = new GraphViewData(x, y); // next day
+												k--;
+											}
+				        					totaldiff = (MainActivity.sgraph.get(i).maxY-MainActivity.sgraph.get(i).minY)/3;
+											minVal=MainActivity.sgraph.get(i).minY;
+											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
+											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
+												@Override
+												public int get(GraphViewDataInterface data) {
+													if(data.getY()<= (minVal+totaldiff*1))
+														return Color.rgb(0, 50, 150);
+													else if(data.getY()<= (minVal+totaldiff*2))
+														return Color.rgb(50, 100, 200);
+													else
+														return Color.rgb(100, 150, 255);
+													
+													
+													//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
+												}
+											});
+											GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
 				        					sg.gvs = exampleSeries;
 				        					MainActivity.sgraph.set(i, sg);
 				        					MainActivity.graphs.get(i).removeAllSeries();
@@ -761,7 +905,6 @@ public class MainFragment extends Fragment {
 
 					        					graphView.getGraphViewStyle().setNumHorizontalLabels(5);
 					        					graphView.getGraphViewStyle().setNumVerticalLabels(2);
-					        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(i).maxY, MainActivity.sgraph.get(i).minY);
 					        					graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
 					        					graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
 					        						@Override
@@ -810,12 +953,12 @@ public class MainFragment extends Fragment {
 				    					stockGraph sg = MainActivity.sgraph.get(i);
 				        				if(v.getId()==sg.id)
 				        				{
-				        					int position= sg.pos-5;
-				        					int end = sg.pos;
+				        					int position= sg.pos-1;
+				        					int end = sg.pos+4;
 				        					if(sg.turnLeft)
 				        						{
 				        							position=position-5;
-				        							end=sg.pos-5;
+				        							end=sg.pos-1;
 				        							sg.turnLeft=false;
 				        						}
 				        					if(position<0)
@@ -835,7 +978,24 @@ public class MainFragment extends Fragment {
 												data[k] = new GraphViewData(x, y); // next day
 												k--;
 											}
-				        					GraphViewSeries exampleSeries = new GraphViewSeries(data);
+				        					totaldiff = (MainActivity.sgraph.get(i).maxY-MainActivity.sgraph.get(i).minY)/3;
+											minVal=MainActivity.sgraph.get(i).minY;
+											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
+											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
+												@Override
+												public int get(GraphViewDataInterface data) {
+													if(data.getY()<= (minVal+totaldiff*1))
+														return Color.rgb(0, 50, 150);
+													else if(data.getY()<= (minVal+totaldiff*2))
+														return Color.rgb(50, 100, 200);
+													else
+														return Color.rgb(100, 150, 255);
+													
+													
+													//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
+												}
+											});
+											GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
 				        					sg.gvs = exampleSeries;
 				        					MainActivity.sgraph.set(i, sg);
 				        					
@@ -864,6 +1024,98 @@ public class MainFragment extends Fragment {
 					        });
 					        LL2.addView(btn3);
 					        //LL2.addView(graphView);
+					        
+					        ImageButton btnm2 = new ImageButton(getActivity());
+							btnm2.setImageResource(R.drawable.ic_action_fast_forward);
+							btnm2.setOnClickListener(buttonClickListener);
+							btnm2.setBackgroundResource(R.drawable.button_customize);
+							btnm2.setLayoutParams(LLParams7);
+							btnm2.setTag(6);
+							btnm2.setId(i+1);
+					        
+							btnm2.setOnClickListener(new OnClickListener() {
+					       	 
+								@Override
+								public void onClick(View v) {
+									View p = (View)v.getParent();
+									View parent = (View)p.getParent();
+									for(int i=0; i<MainActivity.sgraph.size(); i++)
+				    				{
+										
+				    					stockGraph sg = MainActivity.sgraph.get(i);
+				        				if(v.getId()==sg.id)
+				        				{
+				        					int position= sg.pos-5;
+				        					int end = sg.pos;
+				        					if(sg.turnLeft)
+				        						{
+				        							position=position-5;
+				        							end=sg.pos-5;
+				        							sg.turnLeft=false;
+				        						}
+				        					if(position<0)
+				        						position=0;
+				        					int diff = end-position;
+				        					MainActivity.sgraph.get(i).pos=position;
+				        					if(diff<5)
+				        					{
+				        						end = end+(5-diff);
+				        					}
+				        					int k=4;
+				        					GraphViewData[] data = new GraphViewData[5];
+
+				        					for (int j=position; j<end; j++) {
+												long x=sg.points.get(j).second;
+												double y=sg.points.get(j).first;
+												data[k] = new GraphViewData(x, y); // next day
+												k--;
+											}
+				        					totaldiff = (MainActivity.sgraph.get(i).maxY-MainActivity.sgraph.get(i).minY)/3;
+											minVal=MainActivity.sgraph.get(i).minY;
+											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
+											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
+												@Override
+												public int get(GraphViewDataInterface data) {
+													if(data.getY()<= (minVal+totaldiff*1))
+														return Color.rgb(0, 50, 150);
+													else if(data.getY()<= (minVal+totaldiff*2))
+														return Color.rgb(50, 100, 200);
+													else
+														return Color.rgb(100, 150, 255);
+													
+													
+													//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
+												}
+											});
+											GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
+				        					sg.gvs = exampleSeries;
+				        					MainActivity.sgraph.set(i, sg);
+				        					
+				        					MainActivity.graphs.get(i).removeAllSeries();
+				        					MainActivity.graphs.get(i).addSeries(exampleSeries); // data
+				        					
+				        					
+				        					/*MainActivity.graphs.get(i).setCustomLabelFormatter(new CustomLabelFormatter() {
+				        						@Override
+				        						public String formatLabel(double value, boolean isValueX) {
+				        							if (isValueX) {
+				        								Date d = new Date((long) value);
+				        								return dateFormat.format(d);
+				        							}
+				        							else{
+				        								return ("$"+Double.toString(value));
+				        							}
+				        						}
+				        					});*/
+				        					break;
+				        				}
+				        				//Log.i("test", "got here2");
+				    				}
+
+								}
+					        });
+										
+					        LL2.addView(btnm2);
 					        
 					        
 

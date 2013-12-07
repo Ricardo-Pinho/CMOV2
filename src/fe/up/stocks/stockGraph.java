@@ -13,7 +13,7 @@ public class stockGraph {
 
 	public String stockName,stockAbrev;
 	public int NoPoints, id;
-	public int pos;
+	public int pos, graphPos;
 	public Calendar beginDate, endDate;
 	public ArrayList<Pair<Double,Long>> points;
 	public Double minY, maxY;

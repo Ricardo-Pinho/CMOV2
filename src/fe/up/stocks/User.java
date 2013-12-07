@@ -30,7 +30,7 @@ public class User implements Serializable {
 	 */
 	public static final long serialVersionUID = 1L;
 	public String Name, Nickname, Password;
-	public HashMap<String,ArrayList<Stock>> stocks;
+	public ArrayList<Portfolio> portfolios;
 	public int stocksNum; 
 	private byte[] encryptedPassword, salt;
 	public User()
@@ -38,7 +38,7 @@ public class User implements Serializable {
 		Name="";
 		Nickname="Error";
 		Password="";
-		stocks = new HashMap<String,ArrayList<Stock>>();
+		portfolios = new ArrayList<Portfolio>();
 	}
 	
 	public User(String Name, String Nickname, String Password)
@@ -47,10 +47,10 @@ public class User implements Serializable {
 		this.Nickname=Nickname;
 		this.Password=Password;
 		stocksNum=0;
-		stocks = new HashMap<String,ArrayList<Stock>>();
+		portfolios = new ArrayList<Portfolio>();
 	}
 	
-	public User(String Name, String Nickname, String Password, String Id, byte[] encryptedPassword, byte[] salt, ArrayList<Stock> stocks, String stockname)
+	public User(String Name, String Nickname, String Password, String Id, byte[] encryptedPassword, byte[] salt, ArrayList<Portfolio> portfolios, String stockname)
 	{
 		this.Name=Name;
 		this.Nickname=Nickname;
@@ -58,7 +58,7 @@ public class User implements Serializable {
 		this.encryptedPassword=encryptedPassword;
 		this.setSalt(salt);
 		stocksNum=0;
-		this.stocks.put(stockname, stocks);
+		this.portfolios = portfolios;
 	}
 	
 	public void Save()
@@ -116,7 +116,7 @@ public class User implements Serializable {
 			Log.d("Name", x.Name);
 			this.setEncryptedPassword(x.getEncryptedPassword());
 			this.setSalt(x.getSalt());
-			this.stocks = x.stocks;
+			this.portfolios = x.portfolios;
 			this.stocksNum=x.stocksNum;
 			return false;
 		}catch (IOException e){ 

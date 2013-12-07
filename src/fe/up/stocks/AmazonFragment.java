@@ -12,20 +12,29 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 
 import com.jjoe64.graphview.BarGraphView;
 import com.jjoe64.graphview.CustomLabelFormatter;
 import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.GraphViewDataInterface;
 import com.jjoe64.graphview.GraphViewSeries;
 import com.jjoe64.graphview.LineGraphView;
+import com.jjoe64.graphview.ValueDependentColor;
 import com.jjoe64.graphview.GraphView.GraphViewData;
+import com.jjoe64.graphview.GraphViewSeries.GraphViewSeriesStyle;
 
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.util.Pair;
@@ -39,6 +48,9 @@ import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.TableLayout;
+import android.widget.TableRow;
+import android.widget.TextView;
 import android.widget.LinearLayout.LayoutParams;
 
 public class AmazonFragment extends Fragment {
@@ -47,7 +59,14 @@ public class AmazonFragment extends Fragment {
 	private ProgressDialog pd;
 	private boolean firstRunning=true;
 	private stockGraph amazon;
-	private int graphPos=0;
+	private realtimeGraph amazon2;
+	private int graphPos=0, graphPos2=0;
+	private final Handler mHandler = new Handler();
+	private Runnable mTimer2;
+	private GraphViewSeries graphView2;
+	private String time="0:00";
+	private int iter=0;
+	private double totaldiff=0;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -86,7 +105,7 @@ public class AmazonFragment extends Fragment {
 				stockGraph sg = new stockGraph();
 				sg.stockAbrev = "AMZN";
 				sg.stockName= "Amazon.com Inc";
-				sg.id=2;
+				sg.id=1;
 				sg.endDate = Calendar.getInstance();
 				sg.beginDate = Calendar.getInstance();
 				sg.beginDate.add(Calendar.DATE, -31);
@@ -104,6 +123,7 @@ public class AmazonFragment extends Fragment {
 						{
 							exists=true;
 							amazon = MainActivity.sgraph.get(i);
+							//amazon2 = MainActivity.sgraph.get(i);
 							graphPos=i;
 							break;
 						}
@@ -114,6 +134,7 @@ public class AmazonFragment extends Fragment {
 						MainActivity.sgraph.add(sg);
 						graphPos = MainActivity.sgraph.size()-1;
 						amazon = sg;
+						//amazon2 = sg;
 					}
 				  //Log.d(Integer.toString(i),Integer.toString(MainActivity.sgraph.get(i).points.size()));
 				  if(amazon.points.size()<1)
@@ -268,11 +289,9 @@ public class AmazonFragment extends Fragment {
 							}
 								else
 							{
-							int num = amazon.NoPoints;
-							String GraphName=amazon.stockName;
-							GraphViewData[] data = new GraphViewData[6];
-							int k=5;
-							int position=6;
+							GraphViewData[] data = new GraphViewData[5];
+							int k=4;
+							int position=5;
 							amazon.pos=position;
 							for (int j=0; j<position; j++) {
 								long x=amazon.points.get(j).second;
@@ -280,12 +299,28 @@ public class AmazonFragment extends Fragment {
 								data[k] = new GraphViewData(x, y); // next day
 								k--;
 							}
-							GraphViewSeries exampleSeries = new GraphViewSeries(data);
+							totaldiff = (amazon.maxY-amazon.minY)/3;
+							GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
+							seriesStyle1.setValueDependentColor(new ValueDependentColor() {
+								@Override
+								public int get(GraphViewDataInterface data) {
+									if(data.getY()<= (amazon.minY+totaldiff*1))
+										return Color.rgb(0, 50, 150);
+									else if(data.getY()<= (amazon.minY+totaldiff*2))
+										return Color.rgb(50, 100, 200);
+									else
+										return Color.rgb(100, 150, 255);
+									
+									
+									//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
+								}
+							});
+							GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
 							amazon.gvs=exampleSeries;
 							GraphView graphView;
 							graphView = new LineGraphView(
 										getActivity()
-										, GraphName
+										, ""
 								);
 							((LineGraphView) graphView).setDrawBackground(true);
 							graphView.addSeries(exampleSeries); // data
@@ -301,16 +336,26 @@ public class AmazonFragment extends Fragment {
 										return dateFormat.format(d);
 									}
 									else{
+										double d= value;
+										String text = Double.toString(Math.abs(d));
+										int integerPlaces = text.indexOf('.');
+										int decimalPlaces = text.length() - integerPlaces - 1;
+										if(decimalPlaces>3)
+										{
+											value=Math.round(d*100.0)/100.0;
+										}
 										return ("$"+Double.toString(value));
 									}
 								}
 							});
 							
+							
+							
 							//graphView.setViewPort(0, 7);
 							//graphView.setScalable(true);
 							graphView.getGraphViewStyle().setNumHorizontalLabels(5);
 							graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
-							graphView.getGraphViewStyle().setNumVerticalLabels(2);
+							graphView.getGraphViewStyle().setTextSize(20);
 							graphView.setId(graphPos);
 							
 							
@@ -318,7 +363,7 @@ public class AmazonFragment extends Fragment {
 							
 							LinearLayout LL = new LinearLayout(getActivity());
 							LL.setOrientation(LinearLayout.VERTICAL);
-							LayoutParams LLParams = new LayoutParams(LayoutParams.MATCH_PARENT,350);
+							LayoutParams LLParams = new LayoutParams(LayoutParams.MATCH_PARENT,400);
 							LLParams.gravity=Gravity.CENTER;
 							LL.setLayoutParams(LLParams);
 							LL.setWeightSum(2);
@@ -338,6 +383,7 @@ public class AmazonFragment extends Fragment {
 							LL3.setLayoutParams(LLParams3);
 
 							MainActivity.graphs.add(graphView);
+							amazon.graphPos=MainActivity.graphs.size()-1;
 							LL3.addView(MainActivity.graphs.get(MainActivity.graphs.size()-1));
 							LayoutParams LLParams4 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
 							LLParams4.setMargins(20, 0, 20, 0);
@@ -347,6 +393,101 @@ public class AmazonFragment extends Fragment {
 							
 							LayoutParams LLParams5 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
 							LLParams5.setMargins(0, 0, 80, 0);
+							
+							LayoutParams LLParams7 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+							LLParams7.setMargins(20, 0, 0, 0);
+							
+							LayoutParams LLParams8 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+							LLParams8.setMargins(0, 0, 20, 0);
+							
+							ImageButton btnm1 = new ImageButton(getActivity());
+							btnm1.setImageResource(R.drawable.ic_action_rewind);
+							btnm1.setOnClickListener(buttonClickListener);
+							btnm1.setBackgroundResource(R.drawable.button_customize);
+							btnm1.setLayoutParams(LLParams8);
+							btnm1.setTag(5);
+							btnm1.setId(graphPos);
+					        
+							btnm1.setOnClickListener(new OnClickListener() {
+					       	 
+								@Override
+								public void onClick(View v) {
+									View p = (View)v.getParent();
+									View parent = (View)p.getParent();
+										Random rand = new Random();
+										long now = new Date().getTime();
+				    					stockGraph sg = MainActivity.sgraph.get(graphPos);
+				    					//Log.d("graph Pos",v.getId()+"-"+sg.id+"-"+MainActivity.sgraph.get(0).stockAbrev+"-"+MainActivity.sgraph.get(graphPos).stockAbrev);
+
+				        					int position= sg.pos+5;
+				        					int begin = sg.pos;
+				        					if(!sg.turnLeft)
+			        						{
+			        							position=position+5;
+			        							begin=sg.pos+5;
+			        							sg.turnLeft=true;
+			        						}
+				        					
+				        					if(position>sg.NoPoints)
+				        						position=sg.NoPoints;
+				        					
+				        					int diff = position-begin;
+				        					MainActivity.sgraph.get(graphPos).pos=position;
+				        					if(diff<5)
+				        					{
+				        						begin = begin-(5-diff);
+				        					}
+				        					int k=4;
+				        					GraphViewData[] data = new GraphViewData[5];
+				        					for (int j=begin; j<position; j++) {
+												long x=sg.points.get(j).second;
+												double y=sg.points.get(j).first;
+												data[k] = new GraphViewData(x, y); // next day
+												k--;
+											}
+				        					totaldiff = (amazon.maxY-amazon.minY)/3;
+											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
+											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
+												@Override
+												public int get(GraphViewDataInterface data) {
+													if(data.getY()<= (amazon.minY+totaldiff*1))
+														return Color.rgb(0, 50, 150);
+													else if(data.getY()<= (amazon.minY+totaldiff*2))
+														return Color.rgb(50, 100, 200);
+													else
+														return Color.rgb(100, 150, 255);
+													
+													
+													//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
+												}
+											});
+											GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
+				        					sg.gvs = exampleSeries;
+				        					MainActivity.sgraph.set(graphPos, sg);
+				        					MainActivity.graphs.get(sg.graphPos).removeAllSeries();
+				        					MainActivity.graphs.get(sg.graphPos).addSeries(exampleSeries); // data
+				        					
+				        					/*MainActivity.graphs.get(i).setCustomLabelFormatter(new CustomLabelFormatter() {
+				        						@Override
+				        						public String formatLabel(double value, boolean isValueX) {
+				        							if (isValueX) {
+				        								Date d = new Date((long) value);
+				        								return dateFormat.format(d);
+				        							}
+				        							else{
+				        								return ("$"+Double.toString(value));
+				        							}
+				        						}
+				        					});*/
+				        				
+				        				//Log.i("test", "got here2");
+
+								}
+					        });
+										
+					        LL2.addView(btnm1);
+							
+							
 							
 							ImageButton btn = new ImageButton(getActivity());
 							btn.setImageResource(R.drawable.ic_action_previous_item);
@@ -362,17 +503,16 @@ public class AmazonFragment extends Fragment {
 								public void onClick(View v) {
 									View p = (View)v.getParent();
 									View parent = (View)p.getParent();
-									for(int i=0; i<MainActivity.sgraph.size(); i++)
-				    				{
-				    					stockGraph sg = MainActivity.sgraph.get(i);
-				        				if(v.getId()==sg.id)
-				        				{
-				        					int position= sg.pos+5;
-				        					int begin = sg.pos;
+										Random rand = new Random();
+										long now = new Date().getTime();
+				    					stockGraph sg = MainActivity.sgraph.get(graphPos);
+
+				        					int position= sg.pos+1;
+				        					int begin = sg.pos-4;
 				        					if(!sg.turnLeft)
 			        						{
 			        							position=position+5;
-			        							begin=sg.pos+5;
+			        							begin=sg.pos+1;
 			        							sg.turnLeft=true;
 			        						}
 				        					
@@ -380,7 +520,7 @@ public class AmazonFragment extends Fragment {
 				        						position=sg.NoPoints;
 				        					
 				        					int diff = position-begin;
-				        					MainActivity.sgraph.get(i).pos=position;
+				        					MainActivity.sgraph.get(graphPos).pos=position;
 				        					if(diff<5)
 				        					{
 				        						begin = begin-(5-diff);
@@ -393,11 +533,27 @@ public class AmazonFragment extends Fragment {
 												data[k] = new GraphViewData(x, y); // next day
 												k--;
 											}
-				        					GraphViewSeries exampleSeries = new GraphViewSeries(data);
+				        					totaldiff = (amazon.maxY-amazon.minY)/3;
+											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
+											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
+												@Override
+												public int get(GraphViewDataInterface data) {
+													if(data.getY()<= (amazon.minY+totaldiff*1))
+														return Color.rgb(0, 50, 150);
+													else if(data.getY()<= (amazon.minY+totaldiff*2))
+														return Color.rgb(50, 100, 200);
+													else
+														return Color.rgb(100, 150, 255);
+													
+													
+													//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
+												}
+											});
+											GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
 				        					sg.gvs = exampleSeries;
-				        					MainActivity.sgraph.set(i, sg);
-				        					MainActivity.graphs.get(i).removeAllSeries();
-				        					MainActivity.graphs.get(i).addSeries(exampleSeries); // data
+				        					MainActivity.sgraph.set(graphPos, sg);
+				        					MainActivity.graphs.get(sg.graphPos).removeAllSeries();
+				        					MainActivity.graphs.get(sg.graphPos).addSeries(exampleSeries); // data
 				        					
 				        					/*MainActivity.graphs.get(i).setCustomLabelFormatter(new CustomLabelFormatter() {
 				        						@Override
@@ -411,12 +567,9 @@ public class AmazonFragment extends Fragment {
 				        							}
 				        						}
 				        					});*/
-				        					break;
-				        				}
+				        				
 				        				//Log.i("test", "got here2");
 				    				}
-
-								}
 					        });
 										
 					        LL2.addView(btn);
@@ -434,15 +587,11 @@ public class AmazonFragment extends Fragment {
 									public void onClick(View v) {
 										View p = (View)v.getParent();
 										View parent = (View)p.getParent();
-										for(int i=0; i<MainActivity.sgraph.size(); i++)
-					    				{
-					    					stockGraph sg = MainActivity.sgraph.get(i);
-					        				if(v.getId()==sg.id)
-					        				{
+					    					stockGraph sg = MainActivity.sgraph.get(graphPos);
 					        					GraphView graphView;
 					        					graphView = new LineGraphView(
 					        								getActivity()
-					        								, sg.stockName
+					        								, ""
 					        						);
 					        					/*
 					        					 * date as label formatter
@@ -450,9 +599,9 @@ public class AmazonFragment extends Fragment {
 					        					graphView.addSeries(sg.gvs); // data
 
 					        					graphView.getGraphViewStyle().setNumHorizontalLabels(5);
-					        					graphView.getGraphViewStyle().setNumVerticalLabels(2);
-					        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(i).maxY, MainActivity.sgraph.get(i).minY);
+					        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(graphPos).maxY, MainActivity.sgraph.get(graphPos).minY);
 					        					graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
+					        					graphView.getGraphViewStyle().setTextSize(20);
 					        					graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
 					        						@Override
 					        						public String formatLabel(double value, boolean isValueX) {
@@ -461,7 +610,15 @@ public class AmazonFragment extends Fragment {
 					        								return dateFormat.format(d);
 					        							}
 					        							else{
-					        								return ("$"+Double.toString(value));
+					        								double d= value;
+															String text = Double.toString(Math.abs(d));
+															int integerPlaces = text.indexOf('.');
+															int decimalPlaces = text.length() - integerPlaces - 1;
+															if(decimalPlaces>3)
+															{
+																value=Math.round(d*100.0)/100.0;
+															}
+															return ("$"+Double.toString(value));
 					        								}
 					        						}
 					        					});
@@ -470,16 +627,13 @@ public class AmazonFragment extends Fragment {
 					        					Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.right_slide_graph);
 					        					animation.setStartOffset(0);
 					        					ln.removeAllViews();
-					        					MainActivity.graphs.set(i,graphView);
-					        					ln.addView(MainActivity.graphs.get(i));
+					        					MainActivity.graphs.set(amazon.graphPos,graphView);
+					        					ln.addView(MainActivity.graphs.get(amazon.graphPos));
 
-					        					MainActivity.graphs.get(i).startAnimation(animation);
-					        					break;
+					        					MainActivity.graphs.get(amazon.graphPos).startAnimation(animation);
 					        				}
 					        				//Log.i("test", "got here2");
-					    				}
 
-									}
 						        });
 					        LL2.addView(btn1);
 					        
@@ -496,27 +650,23 @@ public class AmazonFragment extends Fragment {
 									public void onClick(View v) {
 										View p = (View)v.getParent();
 										View parent = (View)p.getParent();
-										for(int i=0; i<MainActivity.sgraph.size(); i++)
-					    				{
-					    					stockGraph sg = MainActivity.sgraph.get(i);
-					        				if(v.getId()==sg.id)
-					        				{
+					    					stockGraph sg = MainActivity.sgraph.get(graphPos);
 					        					GraphView graphView;
 					        					graphView = new BarGraphView(
 					        								getActivity()
-					        								, sg.stockName
+					        								, ""
 					        						);
 					        					graphView.addSeries(sg.gvs); // data
 
-					        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(i).maxY, MainActivity.sgraph.get(i).minY);
+					        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(graphPos).maxY, MainActivity.sgraph.get(graphPos).minY);
 					        					/*
 					        					 * date as label formatter
 					        					 */
 
 					        					graphView.getGraphViewStyle().setNumHorizontalLabels(5);
-					        					graphView.getGraphViewStyle().setNumVerticalLabels(2);
-					        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(i).maxY, MainActivity.sgraph.get(i).minY);
+					        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(graphPos).maxY, MainActivity.sgraph.get(graphPos).minY);
 					        					graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
+					        					graphView.getGraphViewStyle().setTextSize(20);
 					        					graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
 					        						@Override
 					        						public String formatLabel(double value, boolean isValueX) {
@@ -525,7 +675,15 @@ public class AmazonFragment extends Fragment {
 					        								return dateFormat.format(d);
 					        							}
 					        							else{
-					        								return ("$"+Double.toString(value));
+					        								double d= value;
+															String text = Double.toString(Math.abs(d));
+															int integerPlaces = text.indexOf('.');
+															int decimalPlaces = text.length() - integerPlaces - 1;
+															if(decimalPlaces>3)
+															{
+																value=Math.round(d*100.0)/100.0;
+															}
+															return ("$"+Double.toString(value));
 					        								}
 					        						}
 					        					});
@@ -533,15 +691,11 @@ public class AmazonFragment extends Fragment {
 					        					Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.right_slide_graph);
 					        					animation.setStartOffset(0);
 					        					ln.removeAllViews();
-					        					MainActivity.graphs.set(i,graphView);
-					        					ln.addView(MainActivity.graphs.get(i));
+					        					MainActivity.graphs.set(amazon.graphPos,graphView);
+					        					ln.addView(MainActivity.graphs.get(amazon.graphPos));
 
-					        					MainActivity.graphs.get(i).startAnimation(animation);
-					        					break;
+					        					MainActivity.graphs.get(amazon.graphPos).startAnimation(animation);
 					        				}
-					    				}
-
-									}
 						        });
 					        LL2.addView(btn2);
 					        
@@ -558,24 +712,20 @@ public class AmazonFragment extends Fragment {
 								public void onClick(View v) {
 									View p = (View)v.getParent();
 									View parent = (View)p.getParent();
-									for(int i=0; i<MainActivity.sgraph.size(); i++)
-				    				{
-										
-				    					stockGraph sg = MainActivity.sgraph.get(i);
-				        				if(v.getId()==sg.id)
-				        				{
-				        					int position= sg.pos-5;
-				        					int end = sg.pos;
+				    					stockGraph sg = MainActivity.sgraph.get(graphPos);
+
+				        					int position= sg.pos-1;
+				        					int end = sg.pos+4;
 				        					if(sg.turnLeft)
 				        						{
 				        							position=position-5;
-				        							end=sg.pos-5;
+				        							end=sg.pos-1;
 				        							sg.turnLeft=false;
 				        						}
 				        					if(position<0)
 				        						position=0;
 				        					int diff = end-position;
-				        					MainActivity.sgraph.get(i).pos=position;
+				        					MainActivity.sgraph.get(graphPos).pos=position;
 				        					if(diff<5)
 				        					{
 				        						end = end+(5-diff);
@@ -589,12 +739,28 @@ public class AmazonFragment extends Fragment {
 												data[k] = new GraphViewData(x, y); // next day
 												k--;
 											}
-				        					GraphViewSeries exampleSeries = new GraphViewSeries(data);
+				        					totaldiff = (amazon.maxY-amazon.minY)/3;
+											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
+											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
+												@Override
+												public int get(GraphViewDataInterface data) {
+													if(data.getY()<= (amazon.minY+totaldiff*1))
+														return Color.rgb(0, 50, 150);
+													else if(data.getY()<= (amazon.minY+totaldiff*2))
+														return Color.rgb(50, 100, 200);
+													else
+														return Color.rgb(100, 150, 255);
+													
+													
+													//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
+												}
+											});
+											GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
 				        					sg.gvs = exampleSeries;
-				        					MainActivity.sgraph.set(i, sg);
+				        					MainActivity.sgraph.set(graphPos, sg);
 				        					
-				        					MainActivity.graphs.get(i).removeAllSeries();
-				        					MainActivity.graphs.get(i).addSeries(exampleSeries); // data
+				        					MainActivity.graphs.get(sg.graphPos).removeAllSeries();
+				        					MainActivity.graphs.get(sg.graphPos).addSeries(exampleSeries); // data
 				        					
 				        					
 				        					/*MainActivity.graphs.get(i).setCustomLabelFormatter(new CustomLabelFormatter() {
@@ -609,28 +775,633 @@ public class AmazonFragment extends Fragment {
 				        							}
 				        						}
 				        					});*/
-				        					break;
-				        				}
+				        				
 				        				//Log.i("test", "got here2");
 				    				}
 
-								}
 					        });
-						        LL2.addView(btn3);
-						        //LL2.addView(graphView);
+					        LL2.addView(btn3);
+					        //LL2.addView(graphView);
+					        
+					        ImageButton btnm2 = new ImageButton(getActivity());
+							btnm2.setImageResource(R.drawable.ic_action_fast_forward);
+							btnm2.setOnClickListener(buttonClickListener);
+							btnm2.setBackgroundResource(R.drawable.button_customize);
+							btnm2.setLayoutParams(LLParams7);
+							btnm2.setTag(6);
+							btnm2.setId(graphPos);
+					        
+							btnm2.setOnClickListener(new OnClickListener() {
+					       	 
+								@Override
+								public void onClick(View v) {
+									View p = (View)v.getParent();
+									View parent = (View)p.getParent();
+										
+				    					stockGraph sg = MainActivity.sgraph.get(graphPos);
+				        					int position= sg.pos-5;
+				        					int end = sg.pos;
+				        					if(sg.turnLeft)
+				        						{
+				        							position=position-5;
+				        							end=sg.pos-5;
+				        							sg.turnLeft=false;
+				        						}
+				        					if(position<0)
+				        						position=0;
+				        					int diff = end-position;
+				        					MainActivity.sgraph.get(graphPos).pos=position;
+				        					if(diff<5)
+				        					{
+				        						end = end+(5-diff);
+				        					}
+				        					int k=4;
+				        					GraphViewData[] data = new GraphViewData[5];
+
+				        					for (int j=position; j<end; j++) {
+												long x=sg.points.get(j).second;
+												double y=sg.points.get(j).first;
+												data[k] = new GraphViewData(x, y); // next day
+												k--;
+											}
+				        					totaldiff = (amazon.maxY-amazon.minY)/3;
+											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
+											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
+												@Override
+												public int get(GraphViewDataInterface data) {
+													if(data.getY()<= (amazon.minY+totaldiff*1))
+														return Color.rgb(0, 50, 150);
+													else if(data.getY()<= (amazon.minY+totaldiff*2))
+														return Color.rgb(50, 100, 200);
+													else
+														return Color.rgb(100, 150, 255);
+													
+													
+													//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
+												}
+											});
+											GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
+				        					sg.gvs = exampleSeries;
+				        					MainActivity.sgraph.set(graphPos, sg);
+				        					
+				        					MainActivity.graphs.get(sg.graphPos).removeAllSeries();
+				        					MainActivity.graphs.get(sg.graphPos).addSeries(exampleSeries); // data
+				        					
+				        					
+				        					/*MainActivity.graphs.get(i).setCustomLabelFormatter(new CustomLabelFormatter() {
+				        						@Override
+				        						public String formatLabel(double value, boolean isValueX) {
+				        							if (isValueX) {
+				        								Date d = new Date((long) value);
+				        								return dateFormat.format(d);
+				        							}
+				        							else{
+				        								return ("$"+Double.toString(value));
+				        							}
+				        						}
+				        					});*/
+				        				
+				        		}
+				        				//Log.i("test", "got here2");
+				    				
+					        });
+										
+					        LL2.addView(btnm2);
 						        
 						        
-	
-	
-								LL.addView(LL3);
-								LL.addView(LL2);
+					        TextView title = new TextView(getActivity());
+					        title.setText(amazon.stockName);
+					        title.setId(5);
+					        title.setGravity(Gravity.CENTER);
+					        title.setTextColor(Color.WHITE);
+					        title.setTextSize(23f);
+					        title.setLayoutParams(new LayoutParams(
+					                LayoutParams.FILL_PARENT,
+					                LayoutParams.WRAP_CONTENT));    
+						    
+						    LL.addView(title);
+							LL.addView(LL3);
+							LL.addView(LL2);
 	
 								LinearLayout linl= (LinearLayout) mainView.findViewById(R.id.graphs);
 							    linl.addView(LL);
+							    
+							    
+							    realtimeGraph sg = new realtimeGraph();
+								sg.stockAbrev = "AMZN";
+								sg.stockName= "Amazon.com Inc";
+								sg.id=1;
+							    boolean exists=false;
+								for(int i=0; i< MainActivity.rgraph.size();i++)
+								{
+									if(amazon.stockName.equals(MainActivity.rgraph.get(i).stockName))
+									{
+										{
+											exists=true;
+											amazon2 = MainActivity.rgraph.get(i);
+											//amazon2 = MainActivity.sgraph.get(i);
+											graphPos2=i;
+											graphView2 = amazon2.gvs;
+											iter=MainActivity.rgraph.get(i).points.size();
+											Log.d("points", MainActivity.rgraph.get(i).points.get(MainActivity.rgraph.get(i).points.size()-1).second+" "+MainActivity.rgraph.get(i).points.get(MainActivity.rgraph.get(i).points.size()-1).first
+													);
+											if (amazon2.isPlay)
+												mHandler.removeCallbacks(mTimer2);
+											break;
+										}
+									}
+								}
+								if(!exists)
+									{
+										MainActivity.rgraph.add(sg);
+										graphPos2 = MainActivity.rgraph.size()-1;
+										amazon2 = sg;
+										/*for (int j=0; j<31; j++) {
+											long x=0;
+											double y=amazon.points.get(amazon.points.size()-1).first;
+											amazon2.points.add(new Pair<Double,Long>(y,x));
+										}*/
+										data = new GraphViewData[0];
+										//position=5;
+										amazon2.pos=0;
+										/*for (int j=0; j<31; j++) {
+											long x=amazon2.points.get(j).second;
+											double y=amazon2.points.get(j).first;
+											data[j] = new GraphViewData(x, y); // next day
+											//k--;
+										}*/
+									    graphView2 = new GraphViewSeries(data);
+									    graphView2.getStyle().color = Color.RED;
+									    amazon2.maxY=(double) amazon.points.get(amazon.points.size()-1).first;
+										amazon2.minY=(double) 0;
+									}
+
+								// graph with custom labels and drawBackground
+									graphView = new LineGraphView(
+											getActivity()
+											, ""/*amazon2.stockName+" Realtime Graph"*/
+									);
+									//((LineGraphView) graphView).setDrawBackground(true);
+									
+									
+								graphView.addSeries(graphView2); // data
+								amazon2.gvs = graphView2;
+								MainActivity.rgraph.set(graphPos2, amazon2);
+								graphView.setViewPort(amazon2.pos, 4);
+								graphView.setScrollable(true);
+								graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
+								graphView.getGraphViewStyle().setNumHorizontalLabels(5);
+								graphView.getGraphViewStyle().setTextSize(20);
+								
+								graphView.setManualYAxisBounds(amazon2.maxY, amazon2.minY);
+								
+								graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
+									@Override
+									public String formatLabel(double value, boolean isValueX) {
+										if (isValueX) {
+											if(value<0 || value>=amazon2.times.size())
+												{
+													Log.d(Double.toString(value),Integer.toString(amazon2.times.size()));
+													return "0:00";
+												}
+											else
+												return amazon2.times.get((int) value);
+										}
+										else{
+													double d= value;
+													String text = Double.toString(Math.abs(d));
+													int integerPlaces = text.indexOf('.');
+													int decimalPlaces = text.length() - integerPlaces - 1;
+													if(decimalPlaces>3)
+													{
+														value=Math.round(d*100.0)/100.0;
+													}
+													return ("$"+Double.toString(value));
+										}
+									}
+								});
+								
+								LinearLayout LLR = new LinearLayout(getActivity());
+								LLR.setOrientation(LinearLayout.VERTICAL);
+								LayoutParams LLParamsR = new LayoutParams(LayoutParams.MATCH_PARENT,400);
+								LLParamsR.gravity=Gravity.CENTER;
+								LLR.setLayoutParams(LLParamsR);
+								LLR.setWeightSum(2);
+								
+								LinearLayout LLR1 = new LinearLayout(getActivity());
+								LLR1.setOrientation(LinearLayout.VERTICAL);
+								LayoutParams LLParamsR1 = new LayoutParams(LayoutParams.MATCH_PARENT,250);
+								LLParamsR1.weight=1;
+								LLR1.setId(graphPos2);
+								LLR1.setLayoutParams(LLParamsR1);
+
+								MainActivity.graphs.add(graphView);
+								amazon2.graphPos=MainActivity.graphs.size()-1;
+								LLR1.addView(MainActivity.graphs.get(MainActivity.graphs.size()-1));
+
+								
+								
+								
+								LinearLayout LLR2 = new LinearLayout(getActivity());
+								LLR2.setOrientation(LinearLayout.HORIZONTAL);
+								LayoutParams LLParamsR2 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+								LLParamsR2.weight=1;
+								LLParamsR2.gravity=Gravity.CENTER;
+								LLR2.setLayoutParams(LLParamsR2);
+								
+								//MainActivity.graphs.add(graphView);
+								//amazon.graphPos=MainActivity.graphs.size()-1;
+								//LL3.addView(MainActivity.graphs.get(MainActivity.graphs.size()-1));
+								LayoutParams LLParamsR4 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+								LLParamsR4.setMargins(20, 0, 20, 0);
+								
+								LayoutParams LLParamsR6 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+								LLParamsR6.setMargins(60, 0, 0, 0);
+								
+								LayoutParams LLParamsR5 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+								LLParamsR5.setMargins(0, 0, 60, 0);
+								
+								LayoutParams LLParamsR7 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+								LLParamsR7.setMargins(20, 0, 0, 0);
+								
+								LayoutParams LLParamsR8 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+								LLParamsR8.setMargins(0, 0, 20, 0);
+								
+								
+								ImageButton btnrm1 = new ImageButton(getActivity());
+								btnrm1.setImageResource(R.drawable.ic_action_rewind);
+								btnrm1.setOnClickListener(buttonClickListener);
+								btnrm1.setBackgroundResource(R.drawable.button_customize);
+								btnrm1.setLayoutParams(LLParams8);
+								btnrm1.setTag(6);
+								btnrm1.setId(graphPos2);
+						        
+								btnrm1.setOnClickListener(new OnClickListener() {
+						       	 
+									@Override
+									public void onClick(View v) {
+
+
+										View p = (View)v.getParent();
+										View parent = (View)p.getParent();
+					    					realtimeGraph sg = MainActivity.rgraph.get(graphPos2);
+					    					MainActivity.graphs.get(sg.graphPos).removeAllSeries();
+					    					MainActivity.graphs.get(sg.graphPos).addSeries(graphView2);
+					    					if(sg.pos-4<=0)
+					    					{
+					        					if(iter>4)
+					    						{
+					        						MainActivity.graphs.get(sg.graphPos).setViewPort(0, 4);
+					        						MainActivity.rgraph.get(graphPos2).pos=0;
+					    						}
+					    					}
+					        				else
+					        				{
+					        					MainActivity.graphs.get(sg.graphPos).setViewPort(sg.pos-4, 4);
+					        					MainActivity.rgraph.get(graphPos2).pos=sg.pos-4;
+					        				}
+					        				
+									}
+						        });
+											
+						        LLR2.addView(btnrm1);
+								
+								ImageButton btnR = new ImageButton(getActivity());
+								btnR.setImageResource(R.drawable.ic_action_previous_item);
+						        btnR.setOnClickListener(buttonClickListener);
+						        btnR.setBackgroundResource(R.drawable.button_customize);
+						        btnR.setLayoutParams(LLParamsR5);
+						        btnR.setTag(1);
+						        btnR.setId(graphPos2);
+						        
+						        btnR.setOnClickListener(new OnClickListener() {
+						       	 
+						        	@Override
+									public void onClick(View v) {
+
+
+										View p = (View)v.getParent();
+										View parent = (View)p.getParent();
+					    					realtimeGraph sg = MainActivity.rgraph.get(graphPos2);
+					    					MainActivity.graphs.get(sg.graphPos).removeAllSeries();
+					    					MainActivity.graphs.get(sg.graphPos).addSeries(graphView2);
+					    					if(sg.pos-1<0)
+					    					{
+					        					/*if(iter>4)
+					    						{
+					        						MainActivity.graphs.get(sg.graphPos).setViewPort(0, 4);
+					        						MainActivity.rgraph.get(graphPos2).pos=0;
+					    						}*/
+					    					}
+					        				else
+					        				{
+					        					MainActivity.graphs.get(sg.graphPos).setViewPort(sg.pos-1, 4);
+					        					MainActivity.rgraph.get(graphPos2).pos=sg.pos-1;
+					        				}
+					        				
+						        	}
+
+						        });
+											
+						        LLR2.addView(btnR);
+						        
+						        ImageButton btnR1 = new ImageButton(getActivity());
+						        if(amazon2.isPlay)
+						        	Log.d("play", "true");
+						        else
+						        	Log.d("play", "false");
+						        
+						        if(amazon2.isPlay)
+								 	btnR1.setImageResource(R.drawable.ic_action_play);
+							       else
+							    	 btnR1.setImageResource(R.drawable.ic_action_pause);
+						        btnR1.setOnClickListener(buttonClickListener);
+						        btnR1.setBackgroundResource(R.drawable.button_customize);
+						        btnR1.setLayoutParams(LLParamsR4);
+						        btnR1.setTag(2);
+						        btnR1.setId(graphPos2);
+						        btnR1.setOnClickListener(new OnClickListener() {
+							       	 
+										@Override
+										public void onClick(View v) {
+											if(amazon2.isPlay)
+									        	Log.d("play", "true");
+									        else
+									        	Log.d("play", "false");
+											
+											 if(!amazon2.isPlay){
+												 	mHandler.removeCallbacks(mTimer2);
+												 	((ImageButton) v).setImageResource(R.drawable.ic_action_play);
+												 	amazon2.isPlay=true;
+												 	MainActivity.rgraph.set(graphPos,amazon2);
+											       }
+											       else{
+											    	   amazon2.isPlay=false;
+											    	   mHandler.post(mTimer2);
+											    	   MainActivity.rgraph.set(graphPos,amazon2);
+											    	   ((ImageButton) v).setImageResource(R.drawable.ic_action_pause); 
+											       }
+										}
+
+							        });
+						        LLR2.addView(btnR1);
+						        
+						        ImageButton btnR2 = new ImageButton(getActivity());
+						        btnR2.setImageResource(R.drawable.ic_action_refresh);
+						        btnR2.setOnClickListener(buttonClickListener);
+						        btnR2.setBackgroundResource(R.drawable.button_customize);
+						        btnR2.setLayoutParams(LLParamsR4);
+						        btnR2.setTag(3);
+						        btnR2.setId(graphPos2);
+						        btnR2.setOnClickListener(new OnClickListener() {
+							       	 
+										@Override
+										public void onClick(View v) {
+											if(!amazon2.isPlay)
+											{
+												mHandler.removeCallbacks(mTimer2);
+												mHandler.post(mTimer2);
+											}
+										}
+							        });
+						        LLR2.addView(btnR2);
+						        
+						        ImageButton btnR4 = new ImageButton(getActivity());
+						        btnR4.setImageResource(R.drawable.ic_action_discard);
+						        btnR4.setOnClickListener(buttonClickListener);
+						        btnR4.setBackgroundResource(R.drawable.button_customize);
+						        btnR4.setLayoutParams(LLParamsR4);
+						        btnR4.setTag(7);
+						        btnR4.setId(graphPos2);
+						        btnR4.setOnClickListener(new OnClickListener() {
+							       	 
+									@Override
+									public void onClick(View v) {
+										View p = (View)v.getParent();
+										View parent = (View)p.getParent();
+										if(!amazon2.isPlay)
+											mHandler.removeCallbacksAndMessages(mTimer2);
+										GraphViewData[] data = new GraphViewData[0];
+										//position=5;
+										amazon2.pos=0;
+										/*for (int j=0; j<31; j++) {
+											long x=amazon2.points.get(j).second;
+											double y=amazon2.points.get(j).first;
+											data[j] = new GraphViewData(x, y); // next day
+											//k--;
+										}*/
+									    graphView2 = new GraphViewSeries(data);
+									    graphView2.getStyle().color = Color.RED;
+									    amazon2.points= new ArrayList<Pair<Double,Long>>();
+									    MainActivity.rgraph.set(graphPos2,amazon2);
+									    amazon2.maxY=(double) amazon.points.get(amazon.points.size()-1).first;
+										amazon2.minY=(double) 0;
+										amazon2.times=new ArrayList<String>();
+										//MainActivity.graphs.get(amazon2.graphPos).removeAllSeries();
+				    					//MainActivity.graphs.get(amazon2.graphPos).addSeries(graphView2);
+				    					
+				    					
+				    					GraphView graphView = new LineGraphView(
+												getActivity()
+												, ""/*amazon2.stockName+" Realtime Graph"*/
+										);
+										//((LineGraphView) graphView).setDrawBackground(true);
+										
+										
+									graphView.addSeries(graphView2); // data
+									amazon2.gvs = graphView2;
+									MainActivity.rgraph.set(graphPos2, amazon2);
+									graphView.setViewPort(amazon2.pos, 4);
+									graphView.setScrollable(true);
+									graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
+									graphView.getGraphViewStyle().setNumHorizontalLabels(5);
+									graphView.getGraphViewStyle().setTextSize(20);
+									
+									graphView.setManualYAxisBounds(amazon2.maxY, amazon2.minY);
+									
+									graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
+										@Override
+										public String formatLabel(double value, boolean isValueX) {
+											if (isValueX) {
+												if(value<0 || value>=amazon2.times.size())
+													{
+														Log.d(Double.toString(value),Integer.toString(amazon2.times.size()));
+														return "0:00";
+													}
+												else
+													return amazon2.times.get((int) value);
+											}
+											else{
+														double d= value;
+														String text = Double.toString(Math.abs(d));
+														int integerPlaces = text.indexOf('.');
+														int decimalPlaces = text.length() - integerPlaces - 1;
+														if(decimalPlaces>3)
+														{
+															value=Math.round(d*100.0)/100.0;
+														}
+														return ("$"+Double.toString(value));
+											}
+										}
+									});
+				    					iter=0;
+				    					LinearLayout ln = (LinearLayout) parent.findViewById(v.getId());
+			        					Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.right_slide_graph);
+			        					animation.setStartOffset(0);
+			        					ln.removeAllViews();
+			        					MainActivity.graphs.set(amazon2.graphPos, graphView);
+			        					ln.addView(MainActivity.graphs.get(amazon2.graphPos));
+
+			        					MainActivity.graphs.get(amazon2.graphPos).startAnimation(animation);
+			        					if(!amazon2.isPlay)
+			        						mHandler.post(mTimer2);
+										
+									}	
+
+						        });
+							        LLR2.addView(btnR4);
+						        
+						        ImageButton btnR3 = new ImageButton(getActivity());
+						        btnR3.setImageResource(R.drawable.ic_action_next_item);
+						        btnR3.setOnClickListener(buttonClickListener);
+						        btnR3.setBackgroundResource(R.drawable.button_customize);
+						        btnR3.setLayoutParams(LLParamsR6);
+						        btnR3.setTag(4);
+						        btnR3.setId(graphPos2);
+						        btnR3.setOnClickListener(new OnClickListener() {
+							       	 
+									@Override
+									public void onClick(View v) {
+										View p = (View)v.getParent();
+										View parent = (View)p.getParent();	
+				    					realtimeGraph sg = MainActivity.rgraph.get(graphPos2);
+				    					MainActivity.graphs.get(sg.graphPos).removeAllSeries();
+				    					MainActivity.graphs.get(sg.graphPos).addSeries(graphView2);
+				    					if(sg.pos+6>iter)
+				    					{
+				    						/*if(iter>4)
+				    						{
+				    							MainActivity.graphs.get(sg.graphPos).setViewPort(iter-5, 4);
+				    							MainActivity.rgraph.get(graphPos2).pos=iter-5;
+				    						}*/
+				    					}
+				        				else
+				        				{
+				        					MainActivity.graphs.get(sg.graphPos).setViewPort(sg.pos+1, 4);
+				        					MainActivity.rgraph.get(graphPos2).pos=sg.pos+1;
+				        				}
+									}	
+
+						        });
+							        LLR2.addView(btnR3);
+							       
+							        
+							        ImageButton btnrm2 = new ImageButton(getActivity());
+									btnrm2.setImageResource(R.drawable.ic_action_fast_forward);
+									btnrm2.setOnClickListener(buttonClickListener);
+									btnrm2.setBackgroundResource(R.drawable.button_customize);
+									btnrm2.setLayoutParams(LLParams7);
+									btnrm2.setTag(6);
+									btnrm2.setId(graphPos2);
+							        
+									btnrm2.setOnClickListener(new OnClickListener() {
+							       	 
+										@Override
+										public void onClick(View v) {
+											View p = (View)v.getParent();
+											View parent = (View)p.getParent();	
+					    					realtimeGraph sg = MainActivity.rgraph.get(graphPos2);
+					    					MainActivity.graphs.get(sg.graphPos).removeAllSeries();
+					    					MainActivity.graphs.get(sg.graphPos).addSeries(graphView2);
+					    					if(sg.pos+10>=iter)
+					    					{
+					    						if(iter>4)
+					    						{
+					    							MainActivity.graphs.get(sg.graphPos).setViewPort(iter-5, 4);
+					    							MainActivity.rgraph.get(graphPos2).pos=iter-5;
+					    						}
+					    					}
+					        				else
+					        				{
+					        					MainActivity.graphs.get(sg.graphPos).setViewPort(sg.pos+4, 4);
+					        					MainActivity.rgraph.get(graphPos2).pos=sg.pos+4;
+					        				}
+											
+						    					/*realtimeGraph sg = MainActivity.rgraph.get(graphPos2);
+						        					int position= sg.pos-5;
+						        					int end = sg.pos;
+						        					if(sg.turnLeft)
+						        						{
+						        							position=position-5;
+						        							end=sg.pos-5;
+						        							sg.turnLeft=false;
+						        						}
+						        					if(position<0)
+						        						position=0;
+						        					int diff = end-position;
+						        					MainActivity.sgraph.get(graphPos).pos=position;
+						        					if(diff<5)
+						        					{
+						        						end = end+(5-diff);
+						        					}
+						        					int k=4;
+						        					GraphViewData[] data = new GraphViewData[5];
+
+						        					for (int j=position; j<end; j++) {
+														long x=sg.points.get(j).second;
+														double y=sg.points.get(j).first;
+														data[k] = new GraphViewData(x, y); // next day
+														k--;
+													}
+						        					GraphViewSeries exampleSeries = new GraphViewSeries(data);
+						        					sg.gvs = exampleSeries;
+						        					MainActivity.rgraph.set(graphPos2, sg);
+						        					
+						        					MainActivity.graphs.get(amazon2.graphPos).removeAllSeries();
+						        					MainActivity.graphs.get(amazon2.graphPos).addSeries(exampleSeries); // data*/
+						        					
+						        					
+						        					/*MainActivity.graphs.get(i).setCustomLabelFormatter(new CustomLabelFormatter() {
+						        						@Override
+						        						public String formatLabel(double value, boolean isValueX) {
+						        							if (isValueX) {
+						        								Date d = new Date((long) value);
+						        								return dateFormat.format(d);
+						        							}
+						        							else{
+						        								return ("$"+Double.toString(value));
+						        							}
+						        						}
+						        					});*/
+						        				}
+						        				//Log.i("test", "got here2");
+
+							        });
+												
+							        LLR2.addView(btnrm2);
+								
+								
+						        TextView valueTV = new TextView(getActivity());
+						        valueTV.setText(amazon2.stockName+" Realtime Graph");
+						        valueTV.setId(5);
+						        valueTV.setGravity(Gravity.CENTER);
+						        valueTV.setTextColor(Color.WHITE);
+						        valueTV.setTextSize(23f);
+						        valueTV.setLayoutParams(new LayoutParams(
+						                LayoutParams.FILL_PARENT,
+						                LayoutParams.WRAP_CONTENT));    
+							    
+							    LLR.addView(valueTV);
+								LLR.addView(LLR1);
+								LLR.addView(LLR2);
+								
+								linl.addView(LLR);
+								
 
 							}
-
-
+								if(amazon2.isPlay)
+									mHandler.removeCallbacks(mTimer2);
+								
 						        setRetainInstance(false);
 								
 						}
@@ -641,12 +1412,168 @@ public class AmazonFragment extends Fragment {
 			}
 				
 		};
+		
 		View[] params = new View[2];
 		params[0] = mainView;
 			task.execute(params);
         	
         	return mainView;
     }
+    
+	private double getRandom() {
+		double high = 3;
+		double low = 0.5;
+		return Math.random() * (high - low) + low;
+	}
+    
+    @Override
+	public void onPause() {
+		mHandler.removeCallbacks(mTimer2);
+		super.onPause();
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+
+		mTimer2 = new Runnable() {
+			@Override
+			public void run() {
+
+				AsyncTask<Void, Void, Void> updater = new AsyncTask<Void, Void, Void>() {
+
+					boolean response=false;
+					@Override
+					protected void onPreExecute() {
+					}
+						
+					@Override
+					protected Void doInBackground(Void... arg0) {
+						if(amazon2!=null && !amazon2.isPlay)
+						{
+						HttpURLConnection con = null;
+						String payload = "Error";
+						int numDays=0;
+						double val=0;
+						try {
+							  
+						      // Build RESTful query (GET)
+						      URL url = new URL("http://finance.yahoo.com/d/quotes?f=sl1d1t1v&s="+amazon.stockAbrev);
+						      //Log.d("url", "http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+MainActivity.sgraph.get(i).stockAbrev);
+						      con = (HttpURLConnection) url.openConnection();
+						      con.setReadTimeout(10000);
+						      con.setConnectTimeout(15000);
+						      con.setRequestMethod("GET");
+						      con.setDoInput(true);
+
+						      // Start the query
+						      con.connect();
+						      
+						      // Read results from the query
+						      BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8" ));
+						      realtimeGraph sg = amazon2;
+						      while((payload = reader.readLine())!=null)
+						      {
+						    		  numDays++;
+						    		  //Log.d("payload", payload);
+						    		  String [] split = payload.split(",");
+						    		  time = split[3].substring(1, split[3].length()-3);
+						    		  if(split[3].charAt(split[3].length()-3)=='p' && !split[3].substring(1,3).equals("12"))
+						    		  {
+						    			  int timer = Integer.parseInt(split[3].substring(1,split[3].indexOf(":")));
+						    			  timer = timer+12;
+						    			  time = Integer.toString(timer)+split[3].substring(split[3].indexOf(":"),split[3].length()-3);
+						    		  }
+						    		  val=Double.parseDouble(split[1]);
+						    		  if(val>amazon2.maxY)
+						    			  amazon2.maxY=val;
+						    		  if(val<amazon2.minY || amazon2.minY==0)
+						    			  amazon2.minY=val;
+						    		  //time= Long.parseLong(split[3]);
+						    		  Pair<Double,Long> p = new Pair<Double,Long>(val,(long) iter);
+						    		  iter++;
+						    		  Log.d("pair", val+" and "+time);
+						    		  //Log.d("pair", Double.parseDouble(split[4])+" and "+dat.getTime());
+						    		  /*if(sg.times.size()==0 || !sg.times.get(sg.times.size()-1).equals(time) )
+						    		  {*/
+						    		  if(sg.times.size()==0)
+						    		  {
+						    			  sg.points.add(p);
+							    		  sg.times.add(time);
+							    		  response=true;
+						    		  }
+						    		  else if(sg.times.get(sg.times.size()-1).equals(time) )
+						    		  {
+						    			  time=time.concat("(2)");
+							    		  sg.points.add(p);
+							    		  sg.times.add(time); 
+							    		  response=true;
+						    		  }
+						    		  else if(sg.times.get(sg.times.size()-1).substring(0,5).equals(time))
+						    		  {
+						    			  String rest = sg.times.get(sg.times.size()-1).substring(6,sg.times.get(sg.times.size()-1).length()-1);
+						    			  Log.d("rest", rest);
+						    			  int num = Integer.parseInt(rest);
+						    			  num=num+1;
+						    			  time=time.concat("("+num+")");
+						    			  sg.points.add(p);
+							    		  sg.times.add(time);
+							    		  response=true;
+						    		  }
+						    		  else
+						    		  {
+						    			  sg.points.add(p);
+							    		  sg.times.add(time); 
+							    		  response=true;
+						    		  }
+						    		  /*else
+						    			  sameNumber=true;*/
+						      }
+						      /*if(!sameNumber)
+						      {*/
+						    	sg.NoPoints=numDays;
+						      	amazon2=sg;
+						      	MainActivity.rgraph.set(graphPos2,amazon2);
+						      //}
+						      reader.close();
+							
+						  } catch (IOException e) {
+							  Log.d("error", e.getMessage());
+						} finally {
+						  if (con != null)
+						    con.disconnect();
+							}
+						}
+						return null;
+					}
+					
+					@Override
+					protected void onPostExecute(Void result) {
+						//Log.d("damn", "ok");
+						if(amazon2!=null && !amazon2.isPlay)
+						{
+							Log.d("point", Long.toString(amazon2.points.get(amazon2.points.size()-1).second)+"-"+Double.toString(amazon2.points.get(amazon2.points.size()-1).first));
+						
+						
+							if(response)
+							 {
+								graphView2.appendData(new GraphViewData(amazon2.points.get(amazon2.points.size()-1).second ,amazon2.points.get(amazon2.points.size()-1).first), true, 1000);
+								amazon2.gvs=graphView2;
+								MainActivity.graphs.get(amazon2.graphPos).setManualYAxisBounds(amazon2.maxY, amazon2.minY);
+								amazon2.pos=iter-5;
+							}
+						 }
+					}
+						
+				};
+				
+					mHandler.postDelayed(this, 10000);
+					updater.execute((Void[])null);
+					//graphView2.appendData(new GraphViewData(getRandom() ,getRandom()), true, 10);
+			}
+		};
+		mHandler.postDelayed(mTimer2, 1000);
+	}
     
     private View.OnClickListener buttonClickListener = new View.OnClickListener() {
 
