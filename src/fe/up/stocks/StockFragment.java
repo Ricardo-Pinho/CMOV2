@@ -10,7 +10,19 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Random;
+
+import org.achartengine.ChartFactory;
+import org.achartengine.GraphicalView;
+import org.achartengine.model.CategorySeries;
+import org.achartengine.model.SeriesSelection;
+import org.achartengine.model.XYMultipleSeriesDataset;
+import org.achartengine.model.XYSeries;
+import org.achartengine.renderer.DefaultRenderer;
+import org.achartengine.renderer.SimpleSeriesRenderer;
+import org.achartengine.renderer.XYMultipleSeriesRenderer;
+import org.achartengine.renderer.XYSeriesRenderer;
 
 
 import com.jjoe64.graphview.BarGraphView;
@@ -32,25 +44,27 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.text.format.DateFormat;
 import android.util.Log;
 import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.LinearLayout.LayoutParams;
 
 
 
-public class MainFragment extends Fragment {
+public class StockFragment extends Fragment {
 
 	private final SimpleDateFormat dateFormat = new SimpleDateFormat("d/M");
 	private final SimpleDateFormat dateYearFormat = new SimpleDateFormat("MMM");
@@ -58,8 +72,12 @@ public class MainFragment extends Fragment {
 	private boolean firstRunning=true;
 	private double totaldiff=0;
 	private double minVal=0;
-	private int iter=0;
 	
+	/** the available AWS regions */
+	private HashMap<String, String> regionData;
+	
+	/** The connectivity data */
+	private HashMap<String, String> connectionData;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,423 +111,61 @@ public class MainFragment extends Fragment {
 				//MainActivity.graphs = new ArrayList<GraphView>();
 				final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 				MainActivity.graphs = new ArrayList<GraphView>(); 
-				stockGraph sg = new stockGraph();
-				sg.stockAbrev = "AMZN";
-				sg.stockName= "Amazon.com Inc";
-				sg.id=1;
-				sg.endDate = Calendar.getInstance();
-				sg.beginDate = Calendar.getInstance();
-				if(MainActivity.monthPeriodGraph && !MainActivity.otherPeriod)
+				stockGraph sg;
+				for(int i=0; i<MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.size();i++)
 				{
-					sg.beginDate.add(Calendar.DATE, -31);
-					sg.monthPeriod=true;
-				}
-				else if(!MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -365);
-					sg.monthPeriod=false;
-				}
-				else
-				{
-					sg.beginDate = MainActivity.beginDate;
-					sg.endDate = MainActivity.endDate;
-				}
-				boolean exists=false;
-				for(int i=0; i< MainActivity.sgraph.size();i++)
-				{
-					if(sg.stockAbrev.equals(MainActivity.sgraph.get(i).stockAbrev))
+					Stock stock = MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(i);
+					sg = new stockGraph();
+					sg.stockAbrev = stock.subName;
+					sg.stockName= stock.Name;
+					sg.id=i*1000;
+					sg.endDate = Calendar.getInstance();
+					sg.beginDate = Calendar.getInstance();
+					if(MainActivity.monthPeriodGraph && !MainActivity.otherPeriod)
 					{
-						if(sg.beginDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).beginDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.beginDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).beginDate.get(Calendar.MONTH)
-								&& sg.beginDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).beginDate.get(Calendar.YEAR)
-								&& sg.endDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).endDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.endDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH)
-								&& sg.endDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).endDate.get(Calendar.YEAR))
+						sg.beginDate.add(Calendar.DATE, -31);
+						sg.monthPeriod=true;
+					}
+					else if(!MainActivity.otherPeriod)
+					{
+						sg.beginDate.add(Calendar.DATE, -365);
+						sg.monthPeriod=false;
+					}
+					else
+					{
+						sg.beginDate = MainActivity.beginDate;
+						sg.endDate = MainActivity.endDate;
+					}
+					boolean exists=false;
+					for(int j=0; j< MainActivity.sgraph.size();j++)
+					{
+						if(sg.stockAbrev.equals(MainActivity.sgraph.get(j).stockAbrev))
 						{
-							exists=true;
-							break;
+							if(sg.beginDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(j).beginDate.get(Calendar.DAY_OF_MONTH) 
+									&& sg.beginDate.get(Calendar.MONTH) == MainActivity.sgraph.get(j).beginDate.get(Calendar.MONTH)
+									&& sg.beginDate.get(Calendar.YEAR) == MainActivity.sgraph.get(j).beginDate.get(Calendar.YEAR)
+									&& sg.endDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(j).endDate.get(Calendar.DAY_OF_MONTH) 
+									&& sg.endDate.get(Calendar.MONTH) == MainActivity.sgraph.get(j).endDate.get(Calendar.MONTH)
+									&& sg.endDate.get(Calendar.YEAR) == MainActivity.sgraph.get(j).endDate.get(Calendar.YEAR))
+							{
+								MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(i).idsgraph=j;
+								exists=true;
+								break;
+							}
 						}
 					}
-				}
-				if(!exists)
-					MainActivity.sgraph.add(sg);
-				
-				sg = new stockGraph();
-				sg.stockAbrev = "AAPL";
-				sg.stockName= "APPLE Inc.";
-				sg.id=2;
-				sg.endDate = Calendar.getInstance();
-				sg.beginDate = Calendar.getInstance();
-				if(MainActivity.monthPeriodGraph && !MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -31);
-					sg.monthPeriod=true;
-				}
-				else if(!MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -365);
-					sg.monthPeriod=false;
-				}
-				else
-				{
-					sg.beginDate = MainActivity.beginDate;
-					sg.endDate = MainActivity.endDate;
-				}
-				//Log.d("begin", sg.beginDate.getTime());
-				//Log.d("end", Long.toString(sg.endDate.getTime().);
-				exists=false;
-				for(int i=0; i< MainActivity.sgraph.size();i++)
-				{
-					if(sg.stockAbrev.equals(MainActivity.sgraph.get(i).stockAbrev))
-					{
-						if(sg.beginDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).beginDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.beginDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).beginDate.get(Calendar.MONTH)
-								&& sg.beginDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).beginDate.get(Calendar.YEAR)
-								&& sg.endDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).endDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.endDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH)
-								&& sg.endDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).endDate.get(Calendar.YEAR))
+					if(!exists)
 						{
-							exists=true;
-							break;
+							MainActivity.sgraph.add(sg);
+							MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(i).idsgraph=MainActivity.sgraph.size()-1;
 						}
-					}
 				}
-				if(!exists)
-					MainActivity.sgraph.add(sg);
 				
-				
-				sg = new stockGraph();
-				sg.stockAbrev = "CSCO";
-				sg.stockName= "Cisco Systems, Inc.";
-				sg.id=3;
-				sg.endDate = Calendar.getInstance();
-				sg.beginDate = Calendar.getInstance();
-				if(MainActivity.monthPeriodGraph && !MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -31);
-					sg.monthPeriod=true;
-				}
-				else if(!MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -365);
-					sg.monthPeriod=false;
-				}
-				else
-				{
-					sg.beginDate = MainActivity.beginDate;
-					sg.endDate = MainActivity.endDate;
-				}
-				exists=false;
-				for(int i=0; i< MainActivity.sgraph.size();i++)
-				{
-					if(sg.stockAbrev.equals(MainActivity.sgraph.get(i).stockAbrev))
-					{
-						if(sg.beginDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).beginDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.beginDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).beginDate.get(Calendar.MONTH)
-								&& sg.beginDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).beginDate.get(Calendar.YEAR)
-								&& sg.endDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).endDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.endDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH)
-								&& sg.endDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).endDate.get(Calendar.YEAR))
-						{
-							exists=true;
-							break;
-						}
-					}
-				}
-				if(!exists)
-					MainActivity.sgraph.add(sg);
-				
-				sg = new stockGraph();
-				sg.stockAbrev = "DELL";
-				sg.stockName= "DELL Inc.";
-				sg.id=4;
-				sg.endDate = Calendar.getInstance();
-				sg.beginDate = Calendar.getInstance();
-				if(MainActivity.monthPeriodGraph && !MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -31);
-					sg.monthPeriod=true;
-				}
-				else if(!MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -365);
-					sg.monthPeriod=false;
-				}
-				else
-				{
-					sg.beginDate = MainActivity.beginDate;
-					sg.endDate = MainActivity.endDate;
-				}
-				exists=false;
-				for(int i=0; i< MainActivity.sgraph.size();i++)
-				{
-					if(sg.stockAbrev.equals(MainActivity.sgraph.get(i).stockAbrev))
-					{
-						if(sg.beginDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).beginDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.beginDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).beginDate.get(Calendar.MONTH)
-								&& sg.beginDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).beginDate.get(Calendar.YEAR)
-								&& sg.endDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).endDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.endDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH)
-								&& sg.endDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).endDate.get(Calendar.YEAR))
-						{
-							exists=true;
-							break;
-						}
-					}
-				}
-				if(!exists)
-					MainActivity.sgraph.add(sg);
-				
-				sg = new stockGraph();
-				sg.stockAbrev = "FB";
-				sg.stockName= "Facebook, Inc";
-				sg.id=5;
-				sg.endDate = Calendar.getInstance();
-				sg.beginDate = Calendar.getInstance();
-				if(MainActivity.monthPeriodGraph && !MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -31);
-					sg.monthPeriod=true;
-				}
-				else if(!MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -365);
-					sg.monthPeriod=false;
-				}
-				else
-				{
-					sg.beginDate = MainActivity.beginDate;
-					sg.endDate = MainActivity.endDate;
-				}
-				exists=false;
-				for(int i=0; i< MainActivity.sgraph.size();i++)
-				{
-					if(sg.stockAbrev.equals(MainActivity.sgraph.get(i).stockAbrev))
-					{
-						if(sg.beginDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).beginDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.beginDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).beginDate.get(Calendar.MONTH)
-								&& sg.beginDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).beginDate.get(Calendar.YEAR)
-								&& sg.endDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).endDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.endDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH)
-								&& sg.endDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).endDate.get(Calendar.YEAR))
-						{
-							exists=true;
-							break;
-						}
-					}
-				}
-				if(!exists)
-					MainActivity.sgraph.add(sg);
-				
-				sg = new stockGraph();
-				sg.stockAbrev = "GOOG";
-				sg.stockName= "Google Inc.";
-				sg.id=6;
-				sg.endDate = Calendar.getInstance();
-				sg.beginDate = Calendar.getInstance();
-				if(MainActivity.monthPeriodGraph && !MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -31);
-					sg.monthPeriod=true;
-				}
-				else if(!MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -365);
-					sg.monthPeriod=false;
-				}
-				else
-				{
-					sg.beginDate = MainActivity.beginDate;
-					sg.endDate = MainActivity.endDate;
-				}
-				exists=false;
-				for(int i=0; i< MainActivity.sgraph.size();i++)
-				{
-					if(sg.stockAbrev.equals(MainActivity.sgraph.get(i).stockAbrev))
-					{
-						if(sg.beginDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).beginDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.beginDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).beginDate.get(Calendar.MONTH)
-								&& sg.beginDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).beginDate.get(Calendar.YEAR)
-								&& sg.endDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).endDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.endDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH)
-								&& sg.endDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).endDate.get(Calendar.YEAR))
-						{
-							exists=true;
-							break;
-						}
-					}
-				}
-				if(!exists)
-					MainActivity.sgraph.add(sg);
-				
-				sg = new stockGraph();
-				sg.stockAbrev = "HPQ";
-				sg.stockName= "Hewlett-Packard Company";
-				sg.id=7;
-				sg.endDate = Calendar.getInstance();
-				sg.beginDate = Calendar.getInstance();
-				if(MainActivity.monthPeriodGraph && !MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -31);
-					sg.monthPeriod=true;
-				}
-				else if(!MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -365);
-					sg.monthPeriod=false;
-				}
-				else
-				{
-					sg.beginDate = MainActivity.beginDate;
-					sg.endDate = MainActivity.endDate;
-				}
-				exists=false;
-				for(int i=0; i< MainActivity.sgraph.size();i++)
-				{
-					if(sg.stockAbrev.equals(MainActivity.sgraph.get(i).stockAbrev))
-					{
-						if(sg.beginDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).beginDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.beginDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).beginDate.get(Calendar.MONTH)
-								&& sg.beginDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).beginDate.get(Calendar.YEAR)
-								&& sg.endDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).endDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.endDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH)
-								&& sg.endDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).endDate.get(Calendar.YEAR))
-						{
-							exists=true;
-							break;
-						}
-					}
-				}
-				if(!exists)
-					MainActivity.sgraph.add(sg);
-				
-				sg = new stockGraph();
-				sg.stockAbrev = "IBM";
-				sg.stockName= "IBM";
-				sg.id=8;
-				sg.endDate = Calendar.getInstance();
-				sg.beginDate = Calendar.getInstance();
-				if(MainActivity.monthPeriodGraph && !MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -31);
-					sg.monthPeriod=true;
-				}
-				else if(!MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -365);
-					sg.monthPeriod=false;
-				}
-				else
-				{
-					sg.beginDate = MainActivity.beginDate;
-					sg.endDate = MainActivity.endDate;
-				}
-				exists=false;
-				for(int i=0; i< MainActivity.sgraph.size();i++)
-				{
-					if(sg.stockAbrev.equals(MainActivity.sgraph.get(i).stockAbrev))
-					{
-						if(sg.beginDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).beginDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.beginDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).beginDate.get(Calendar.MONTH)
-								&& sg.beginDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).beginDate.get(Calendar.YEAR)
-								&& sg.endDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).endDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.endDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH)
-								&& sg.endDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).endDate.get(Calendar.YEAR))
-						{
-							exists=true;
-							break;
-						}
-					}
-				}
-				if(!exists)
-					MainActivity.sgraph.add(sg);
-				
-				sg = new stockGraph();
-				sg.stockAbrev = "MSFT";
-				sg.stockName= "Microsoft Corporation";
-				sg.id=9;
-				sg.endDate = Calendar.getInstance();
-				sg.beginDate = Calendar.getInstance();
-				if(MainActivity.monthPeriodGraph && !MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -31);
-					sg.monthPeriod=true;
-				}
-				else if(!MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -365);
-					sg.monthPeriod=false;
-				}
-				else
-				{
-					sg.beginDate = MainActivity.beginDate;
-					sg.endDate = MainActivity.endDate;
-				}
-				exists=false;
-				for(int i=0; i< MainActivity.sgraph.size();i++)
-				{
-					if(sg.stockAbrev.equals(MainActivity.sgraph.get(i).stockAbrev))
-					{
-						if(sg.beginDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).beginDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.beginDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).beginDate.get(Calendar.MONTH)
-								&& sg.beginDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).beginDate.get(Calendar.YEAR)
-								&& sg.endDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).endDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.endDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH)
-								&& sg.endDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).endDate.get(Calendar.YEAR))
-						{
-							exists=true;
-							break;
-						}
-					}
-				}
-				if(!exists)
-					MainActivity.sgraph.add(sg);
-				
-				sg = new stockGraph();
-				sg.stockAbrev = "ORCL";
-				sg.stockName= "Oracle Corporation";
-				sg.id=10;
-				sg.endDate = Calendar.getInstance();
-				sg.beginDate = Calendar.getInstance();
-				if(MainActivity.monthPeriodGraph && !MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -31);
-					sg.monthPeriod=true;
-				}
-				else if(!MainActivity.otherPeriod)
-				{
-					sg.beginDate.add(Calendar.DATE, -365);
-					sg.monthPeriod=false;
-				}
-				else
-				{
-					sg.beginDate = MainActivity.beginDate;
-					sg.endDate = MainActivity.endDate;
-				}
-				exists=false;
-				for(int i=0; i< MainActivity.sgraph.size();i++)
-				{
-					if(sg.stockAbrev.equals(MainActivity.sgraph.get(i).stockAbrev))
-					{
-						if(sg.beginDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).beginDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.beginDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).beginDate.get(Calendar.MONTH)
-								&& sg.beginDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).beginDate.get(Calendar.YEAR)
-								&& sg.endDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).endDate.get(Calendar.DAY_OF_MONTH) 
-								&& sg.endDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH)
-								&& sg.endDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).endDate.get(Calendar.YEAR))
-						{
-							exists=true;
-							break;
-						}
-					}
-				}
-				if(!exists)
-					MainActivity.sgraph.add(sg);
-				
-        for(int i=0; i< MainActivity.sgraph.size();i++)
+        for(int i=0; i< MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.size();i++)
         {
+        		  Stock stock= MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(i);
 				  //Log.d(Integer.toString(i),Integer.toString(MainActivity.sgraph.get(i).points.size()));
-				  if(MainActivity.sgraph.get(i).points.size()<1)
+				  if(MainActivity.sgraph.get(stock.idsgraph).points.size()<1)
 				  {
 					HttpURLConnection con = null;
 				    String payload = "Error";
@@ -517,21 +173,20 @@ public class MainFragment extends Fragment {
 				    double val=0;
 				    try {
 				    	  boolean first=true;
-				    	  Log.d("date", df.format(MainActivity.sgraph.get(i).beginDate.getTime()));
-				    	  int bmonth = MainActivity.sgraph.get(i).beginDate.get(Calendar.MONTH);
-				    	  int bday = MainActivity.sgraph.get(i).beginDate.get(Calendar.DAY_OF_MONTH);
-				    	  int byear = MainActivity.sgraph.get(i).beginDate.get(Calendar.YEAR);
+				    	  Log.d("date", df.format(MainActivity.sgraph.get(stock.idsgraph).beginDate.getTime()));
+				    	  int bmonth = MainActivity.sgraph.get(stock.idsgraph).beginDate.get(Calendar.MONTH);
+				    	  int bday = MainActivity.sgraph.get(stock.idsgraph).beginDate.get(Calendar.DAY_OF_MONTH);
+				    	  int byear = MainActivity.sgraph.get(stock.idsgraph).beginDate.get(Calendar.YEAR);
 				    	  
-				    	  int emonth = MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH);
-				    	  int eday = MainActivity.sgraph.get(i).endDate.get(Calendar.DAY_OF_MONTH);
-				    	  int eyear = MainActivity.sgraph.get(i).endDate.get(Calendar.YEAR);
+				    	  int emonth = MainActivity.sgraph.get(stock.idsgraph).endDate.get(Calendar.MONTH);
+				    	  int eday = MainActivity.sgraph.get(stock.idsgraph).endDate.get(Calendar.DAY_OF_MONTH);
+				    	  int eyear = MainActivity.sgraph.get(stock.idsgraph).endDate.get(Calendar.YEAR);
 				          // Build RESTful query (GET)
 				    	  URL url;
 				    	  if(MainActivity.monthPeriodGraph)
-				    		  url = new URL("http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+MainActivity.sgraph.get(i).stockAbrev);
+				    		  url = new URL("http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+MainActivity.sgraph.get(stock.idsgraph).stockAbrev);
 				    	  else
-					          url = new URL("http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=m&s="+MainActivity.sgraph.get(i).stockAbrev);
-
+					          url = new URL("http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=m&s="+MainActivity.sgraph.get(stock.idsgraph).stockAbrev);
 				    	  //Log.d("url", "http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+MainActivity.sgraph.get(i).stockAbrev);
 				          con = (HttpURLConnection) url.openConnection();
 				          con.setReadTimeout(10000);
@@ -544,8 +199,8 @@ public class MainFragment extends Fragment {
 				          
 				          // Read results from the query
 				          BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8" ));
-				          sg = MainActivity.sgraph.get(i);
-				          iter=0;
+				          sg = MainActivity.sgraph.get(stock.idsgraph);
+				          int iter=0;
 				          while((payload = reader.readLine())!=null)
 				          {
 				        	  if(first)
@@ -569,12 +224,12 @@ public class MainFragment extends Fragment {
 								  sg.times.add(dat);
 				        		  Pair<Double,Long> p = new Pair<Double,Long>(val,(long)iter);
 				        		  iter=iter+1;
-				        		  //Log.d("pair", Double.parseDouble(split[4])+" and "+split[0]);
+				        		  //Log.d("pair", Double.parseDouble(split[4])+" and "+dat.getTime());
 				        		  sg.points.add(p);
 				        	  }
 				          }
 				          sg.NoPoints=numDays;
-				          MainActivity.sgraph.set(i, sg);
+				          MainActivity.sgraph.set(stock.idsgraph, sg);
 				          reader.close();
 				      } catch (IOException e) {
 				    } finally {
@@ -582,9 +237,9 @@ public class MainFragment extends Fragment {
 				        con.disconnect();
 				    }
 
-				    MainActivity.sgraph.get(i).NoPoints=numDays;
-				}
-}
+				    MainActivity.sgraph.get(stock.idsgraph).NoPoints=numDays;
+				  }
+        		}
 				return params[0];
 			}
 			
@@ -621,13 +276,122 @@ public class MainFragment extends Fragment {
 							break;
 						default:
 						{
-							for(int i=0; i<MainActivity.sgraph.size();i++)
-							{
+							
+							
+							final Portfolio port = MainActivity.usr.portfolios.get(MainActivity.portIndex);
+							LinearLayout LLpie = new LinearLayout(getActivity());
+							LLpie.setOrientation(LinearLayout.VERTICAL);
+							//LL.setPadding(16,16,16,16);
+							LLpie.setGravity(Gravity.CENTER);
+							LayoutParams LLParamspie = new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT);
+							LLpie.setLayoutParams(LLParamspie);
+							
+							LayoutParams LLParamspiebutton = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+							LLParamspiebutton.setMargins(0, 10, 0, 20);
+							
+							LinearLayout LL1 = new LinearLayout(getActivity());
+							LL1.setOrientation(LinearLayout.VERTICAL);
+							LL1.setBackgroundResource(R.color.blue_light);
+							LayoutParams LLParams1 = new LayoutParams(LayoutParams.MATCH_PARENT,1);
+							LLParams1.setMargins(0, 0, 0, 30);
+							LL1.setLayoutParams(LLParams1);
+							
+							LinearLayout LLH = new LinearLayout(getActivity());
+							LLH.setOrientation(LinearLayout.HORIZONTAL);
+							LLH.setGravity(Gravity.CENTER);
+							LayoutParams LLParamsH = new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT);
+							LLH.setLayoutParams(LLParamsH);
+							
+							LinearLayout LLV1 = new LinearLayout(getActivity());
+							LLV1.setOrientation(LinearLayout.VERTICAL);
+							LLV1.setGravity(Gravity.CENTER);
+							LayoutParams LLParamsV1 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+							LLParamsV1.setMargins(0, 0, 30, 10);
+							LLV1.setLayoutParams(LLParamsV1);
+							
+							LinearLayout LLV2 = new LinearLayout(getActivity());
+							LLV2.setOrientation(LinearLayout.VERTICAL);
+							LLV2.setGravity(Gravity.CENTER);
+							LayoutParams LLParamsV2 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+							LLParamsV2.setMargins(30, 0, 0, 10);
+							LLV2.setLayoutParams(LLParamsV2);
+							
+							final ImageButton piebtn = new ImageButton(getActivity());
+							piebtn.setImageResource(R.drawable.chart_256);
+							piebtn.setOnClickListener(buttonClickListener);
+							piebtn.setLayoutParams(LLParamspiebutton);
+							piebtn.setBackgroundResource(R.drawable.button_customize5);
 
-								if(MainActivity.sgraph.get(i).monthPeriod != MainActivity.monthPeriodGraph)
+							piebtn.setOnClickListener(new OnClickListener() {
+									@Override
+									public void onClick(View v) {
+										PieGraph pie = new PieGraph();
+										pie.port = port;
+								    	Intent lineIntent = pie.getIntent(getActivity());
+								        startActivity(lineIntent);
+
+									}
+						        });
+					        LLV1.addView(piebtn);
+					        TextView Piegraphtitle1 = new TextView(getActivity());
+					        Piegraphtitle1.setText("Number of Stocks");
+					        Piegraphtitle1.setGravity(Gravity.CENTER);
+					        Piegraphtitle1.setTextColor(Color.WHITE);
+					        Piegraphtitle1.setTextSize(23f);
+					        Piegraphtitle1.setLayoutParams(new LayoutParams(
+					                LayoutParams.WRAP_CONTENT,
+					                LayoutParams.WRAP_CONTENT));    
+						    
+						    LLV1.addView(Piegraphtitle1);
+					        
+					        
+					        final ImageButton piebtn2 = new ImageButton(getActivity());
+							piebtn2.setImageResource(R.drawable.chart_256);
+							piebtn2.setOnClickListener(buttonClickListener);
+							piebtn2.setLayoutParams(LLParamspiebutton);
+							piebtn2.setBackgroundResource(R.drawable.button_customize5);
+
+							piebtn2.setOnClickListener(new OnClickListener() {
+									@Override
+									public void onClick(View v) {
+										TotalPieGraph pie = new TotalPieGraph();
+										pie.port = port;
+								    	Intent lineIntent = pie.getIntent(getActivity());
+								        startActivity(lineIntent);
+
+									}
+						        });
+					        LLV2.addView(piebtn2);
+					        
+					        TextView Piegraphtitle2 = new TextView(getActivity());
+					        Piegraphtitle2.setText("Value of Stocks");
+					        Piegraphtitle2.setGravity(Gravity.CENTER);
+					        Piegraphtitle2.setTextColor(Color.WHITE);
+					        Piegraphtitle2.setTextSize(23f);
+					        Piegraphtitle2.setLayoutParams(new LayoutParams(
+					                LayoutParams.WRAP_CONTENT,
+					                LayoutParams.WRAP_CONTENT));    
+						    
+						    LLV2.addView(Piegraphtitle2);
+					        
+					        LLH.addView(LLV1);
+					        LLH.addView(LLV2);
+					        
+					        LLpie.addView(LLH);
+					        
+					        
+							LLpie.addView(LL1);
+							LinearLayout lnl= (LinearLayout) mainView.findViewById(R.id.graphs);
+							if(port.stocks.size()>0)
+								lnl.addView(LLpie);
+							
+							for(int i=0; i<MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.size();i++)
+							{
+								Stock stock= MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(i);
+								if(MainActivity.sgraph.get(stock.idsgraph).monthPeriod != MainActivity.monthPeriodGraph)
 								{}
 						        //Log.d(MainActivity.sgraph.get(i).stockName, Integer.toString(MainActivity.sgraph.get(i).NoPoints));
-								else if(MainActivity.sgraph.get(i).NoPoints<=1)							
+								else if(MainActivity.sgraph.get(stock.idsgraph).NoPoints<=1)							
 								{
 									int num = 1;
 									GraphViewData[] data = new GraphViewData[2];
@@ -663,14 +427,14 @@ public class MainFragment extends Fragment {
 								LL3.setOrientation(LinearLayout.VERTICAL);
 								LayoutParams LLParams3 = new LayoutParams(LayoutParams.MATCH_PARENT,250);
 								LLParams3.weight=1;
-								LL3.setId(i+1);
+								LL3.setId(i);
 								LL3.setLayoutParams(LLParams3);
 
 								MainActivity.graphs.add(graphView);
 								LL3.addView(MainActivity.graphs.get(MainActivity.graphs.size()-1));
+								
 								TextView title = new TextView(getActivity());
-						        title.setText(MainActivity.sgraph.get(i).stockName);
-						        //title.setId(i+1);
+						        title.setText(stock.Name);
 						        title.setGravity(Gravity.CENTER);
 						        title.setTextColor(Color.WHITE);
 						        title.setTextSize(23f);
@@ -681,26 +445,26 @@ public class MainFragment extends Fragment {
 							    LL.addView(title);
 								LL.addView(LL3);
 
-								LinearLayout linl= (LinearLayout) mainView.findViewById(R.id.graphs);
-							    linl.addView(LL);
+								LinearLayout linla= (LinearLayout) mainView.findViewById(R.id.graphs);
+							    linla.addView(LL);
 
 							}
-							else
+								else
 							{
+							final int stockId = stock.idsgraph;
 							//int num = MainActivity.sgraph.get(i).NoPoints;
-							final int currentPos = i;
 							GraphViewData[] data = new GraphViewData[5];
 							int k=4;
 							int position=5;
-							MainActivity.sgraph.get(i).pos=position;
+							MainActivity.sgraph.get(stock.idsgraph).pos=position;
 							for (int j=0; j<position; j++) {
-								long x=MainActivity.sgraph.get(i).points.get(j).second;
-								double y=MainActivity.sgraph.get(i).points.get(j).first;
+								long x=MainActivity.sgraph.get(stock.idsgraph).points.get(j).second;
+								double y=MainActivity.sgraph.get(stock.idsgraph).points.get(j).first;
 								data[k] = new GraphViewData(x, y); // next day
 								k--;
 							}
-							totaldiff = (MainActivity.sgraph.get(i).maxY-MainActivity.sgraph.get(i).minY)/3;
-							minVal=MainActivity.sgraph.get(i).minY;
+							totaldiff = (MainActivity.sgraph.get(stock.idsgraph).maxY-MainActivity.sgraph.get(stock.idsgraph).minY)/3;
+							minVal=MainActivity.sgraph.get(stock.idsgraph).minY;
 							GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
 							seriesStyle1.setValueDependentColor(new ValueDependentColor() {
 								@Override
@@ -716,10 +480,13 @@ public class MainFragment extends Fragment {
 									//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
 								}
 							});
-							GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
-							stockGraph gs = MainActivity.sgraph.get(i);
+							
+							GraphViewSeries exampleSeries = new GraphViewSeries("Stock Price", seriesStyle1, data);
+							
+							
+							stockGraph gs = MainActivity.sgraph.get(stock.idsgraph);
 							gs.gvs=exampleSeries;
-							MainActivity.sgraph.set(i, gs);
+							//gs.gvs2=BoughtPriceSeries;
 							
 							GraphView graphView;
 							graphView = new LineGraphView(
@@ -727,8 +494,22 @@ public class MainFragment extends Fragment {
 										, ""
 								);
 							((LineGraphView) graphView).setDrawBackground(true);
+							//int num = MainActivity.sgraph.get(stock.idsgraph).NoPoints;
+							GraphViewData[] data1 = new GraphViewData[5];
+							k=4;
+							for (int l=0; l<position; l++) {
+								data1[k] = new GraphViewData(l, stock.unitPrice);
+								k--;
+							}
+							GraphViewSeries BoughtPriceSeries = new GraphViewSeries("Bought Price", new GraphViewSeriesStyle(Color.rgb(0, 0, 250), 3), data1);
+							graphView.addSeries(BoughtPriceSeries); // data
 							graphView.addSeries(exampleSeries); // data
-							graphView.setManualYAxisBounds(MainActivity.sgraph.get(i).maxY, MainActivity.sgraph.get(i).minY);
+							gs.gvs2=BoughtPriceSeries;
+							MainActivity.sgraph.set(stock.idsgraph, gs);
+							graphView.setShowLegend(true);
+							
+							
+							graphView.setManualYAxisBounds(MainActivity.sgraph.get(stock.idsgraph).maxY, MainActivity.sgraph.get(stock.idsgraph).minY);
 							/*
 							 * date as label formatter
 							 */
@@ -736,11 +517,10 @@ public class MainFragment extends Fragment {
 								@Override
 								public String formatLabel(double value, boolean isValueX) {
 									if (isValueX) {
-										if(MainActivity.sgraph.get(currentPos).monthPeriod)
-											return dateFormat.format(MainActivity.sgraph.get(currentPos).times.get((int) value));
+										if(MainActivity.sgraph.get(stockId).monthPeriod)
+											return dateFormat.format(MainActivity.sgraph.get(stockId).times.get((int) value));
 										else
-											return dateYearFormat.format(MainActivity.sgraph.get(currentPos).times.get((int) value));
-									}
+											return dateYearFormat.format(MainActivity.sgraph.get(stockId).times.get((int) value));									}
 									else{
 										double d= value;
 										String text = Double.toString(Math.abs(d));
@@ -762,7 +542,8 @@ public class MainFragment extends Fragment {
 							graphView.getGraphViewStyle().setTextSize(20);
 							graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
 							graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
-							graphView.setId(i);
+							graphView.getGraphViewStyle().setLegendWidth(160);
+							graphView.setId(i+1);
 							
 							
 							
@@ -789,7 +570,6 @@ public class MainFragment extends Fragment {
 							LL3.setLayoutParams(LLParams3);
 
 							MainActivity.graphs.add(graphView);
-							MainActivity.sgraph.get(i).graphPos=MainActivity.graphs.size()-1;
 							LL3.addView(MainActivity.graphs.get(MainActivity.graphs.size()-1));
 							LayoutParams LLParams4 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
 							LLParams4.setMargins(20, 0, 20, 0);
@@ -822,11 +602,13 @@ public class MainFragment extends Fragment {
 								public void onClick(View v) {
 									View p = (View)v.getParent();
 									View parent = (View)p.getParent();
-									for(int i=0; i<MainActivity.sgraph.size(); i++)
+									for(int i=0; i<MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.size(); i++)
 				    				{
+										Log.d("i", Integer.toString(i));
+										Stock stock= MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(i);
 										Random rand = new Random();
 										long now = new Date().getTime();
-				    					stockGraph sg = MainActivity.sgraph.get(i);
+				    					stockGraph sg = MainActivity.sgraph.get(stock.idsgraph);
 				        				if(v.getId()==i)
 				        				{
 				        					int position= sg.pos+5;
@@ -842,7 +624,7 @@ public class MainFragment extends Fragment {
 				        						position=sg.NoPoints;
 				        					
 				        					int diff = position-begin;
-				        					MainActivity.sgraph.get(i).pos=position;
+				        					MainActivity.sgraph.get(stock.idsgraph).pos=position;
 				        					if(diff<5)
 				        					{
 				        						begin = begin-(5-diff);
@@ -855,8 +637,8 @@ public class MainFragment extends Fragment {
 												data[k] = new GraphViewData(x, y); // next day
 												k--;
 											}
-				        					totaldiff = (MainActivity.sgraph.get(i).maxY-MainActivity.sgraph.get(i).minY)/3;
-											minVal=MainActivity.sgraph.get(i).minY;
+				        					totaldiff = (MainActivity.sgraph.get(stock.idsgraph).maxY-MainActivity.sgraph.get(stock.idsgraph).minY)/3;
+											minVal=MainActivity.sgraph.get(stock.idsgraph).minY;
 											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
 											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
 												@Override
@@ -872,11 +654,20 @@ public class MainFragment extends Fragment {
 													//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
 												}
 											});
-											GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
+											GraphViewSeries exampleSeries = new GraphViewSeries("Stock Price", seriesStyle1, data);
 				        					sg.gvs = exampleSeries;
-				        					MainActivity.sgraph.set(i, sg);
-				        					MainActivity.graphs.get(sg.graphPos).removeAllSeries();
-				        					MainActivity.graphs.get(sg.graphPos).addSeries(exampleSeries); // data
+				        					GraphViewData[] data1 = new GraphViewData[5];
+											k=4;
+											for (int l=begin; l<position; l++) {
+												data1[k] = new GraphViewData(l, stock.unitPrice);
+												k--;
+											}
+											GraphViewSeries BoughtPriceSeries = new GraphViewSeries("Bought Price", new GraphViewSeriesStyle(Color.rgb(0, 0, 250), 3), data1);
+											sg.gvs2=BoughtPriceSeries;
+				        					MainActivity.sgraph.set(stock.idsgraph, sg);
+				        					MainActivity.graphs.get(i).removeAllSeries();
+				        					MainActivity.graphs.get(i).addSeries(BoughtPriceSeries);
+				        					MainActivity.graphs.get(i).addSeries(exampleSeries); // data
 				        					
 				        					/*MainActivity.graphs.get(i).setCustomLabelFormatter(new CustomLabelFormatter() {
 				        						@Override
@@ -916,11 +707,12 @@ public class MainFragment extends Fragment {
 								public void onClick(View v) {
 									View p = (View)v.getParent();
 									View parent = (View)p.getParent();
-									for(int i=0; i<MainActivity.sgraph.size(); i++)
+									for(int i=0; i<MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.size(); i++)
 				    				{
+										Stock stock= MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(i);
 										Random rand = new Random();
 										long now = new Date().getTime();
-				    					stockGraph sg = MainActivity.sgraph.get(i);
+				    					stockGraph sg = MainActivity.sgraph.get(stock.idsgraph);
 				        				if(v.getId()==i)
 				        				{
 				        					int position= sg.pos+1;
@@ -936,7 +728,7 @@ public class MainFragment extends Fragment {
 				        						position=sg.NoPoints;
 				        					
 				        					int diff = position-begin;
-				        					MainActivity.sgraph.get(i).pos=position;
+				        					MainActivity.sgraph.get(stock.idsgraph).pos=position;
 				        					if(diff<5)
 				        					{
 				        						begin = begin-(5-diff);
@@ -949,8 +741,8 @@ public class MainFragment extends Fragment {
 												data[k] = new GraphViewData(x, y); // next day
 												k--;
 											}
-				        					totaldiff = (MainActivity.sgraph.get(i).maxY-MainActivity.sgraph.get(i).minY)/3;
-											minVal=MainActivity.sgraph.get(i).minY;
+				        					totaldiff = (MainActivity.sgraph.get(stock.idsgraph).maxY-MainActivity.sgraph.get(stock.idsgraph).minY)/3;
+											minVal=MainActivity.sgraph.get(stock.idsgraph).minY;
 											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
 											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
 												@Override
@@ -966,11 +758,21 @@ public class MainFragment extends Fragment {
 													//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
 												}
 											});
-											GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
+											GraphViewSeries exampleSeries = new GraphViewSeries("Stock Price", seriesStyle1, data);
 				        					sg.gvs = exampleSeries;
-				        					MainActivity.sgraph.set(i, sg);
-				        					MainActivity.graphs.get(sg.graphPos).removeAllSeries();
-				        					MainActivity.graphs.get(sg.graphPos).addSeries(exampleSeries); // data
+				        					GraphViewData[] data1 = new GraphViewData[5];
+											k=4;
+											for (int l=begin; l<position; l++) {
+												data1[k] = new GraphViewData(l, stock.unitPrice);
+												k--;
+											}
+											GraphViewSeries BoughtPriceSeries = new GraphViewSeries("Bought Price", new GraphViewSeriesStyle(Color.rgb(0, 0, 250), 3), data1);
+											sg.gvs2=BoughtPriceSeries;
+				        					MainActivity.sgraph.set(stock.idsgraph, sg);
+				        					MainActivity.graphs.get(i).removeAllSeries();
+				        					MainActivity.graphs.get(i).addSeries(BoughtPriceSeries);
+
+				        					MainActivity.graphs.get(i).addSeries(exampleSeries); // data
 				        					
 				        					/*MainActivity.graphs.get(i).setCustomLabelFormatter(new CustomLabelFormatter() {
 				        						@Override
@@ -1005,17 +807,17 @@ public class MainFragment extends Fragment {
 						       	 
 									@Override
 									public void onClick(View v) {
-										View p = (View)v.getParent();
-										View parent = (View)p.getParent();
 										if(MainActivity.betterCharts)
 										{
-											for(int i=0; i<MainActivity.sgraph.size(); i++)
+											for(int i=0; i<MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.size(); i++)
 						    				{
-						    					stockGraph sg = MainActivity.sgraph.get(i);
+												Stock stock= MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(i);
+						    					stockGraph sg = MainActivity.sgraph.get(stock.idsgraph);
 						        				if(v.getId()==i)
 						        				{
 													LinearGraph lin = new LinearGraph();
-													lin.sgraph = MainActivity.sgraph.get(i);
+													lin.sgraph = sg;
+													lin.isport=stock.unitPrice;
 											    	Intent lineIntent = lin.getIntent(getActivity());
 											        startActivity(lineIntent);
 						        					break;
@@ -1025,63 +827,67 @@ public class MainFragment extends Fragment {
 										}
 										else
 										{
-											for(int i=0; i<MainActivity.sgraph.size(); i++)
-						    				{
-						    					stockGraph sg = MainActivity.sgraph.get(i);
-						        				if(v.getId()==i)
-						        				{
-						        					GraphView graphView;
-						        					graphView = new LineGraphView(
-						        								getActivity()
-						        								, ""
-						        						);
-						        					/*
-						        					 * date as label formatter
-						        					 */
-						        					graphView.addSeries(sg.gvs); // data
-	
-						        					graphView.getGraphViewStyle().setNumHorizontalLabels(5);
-						        					graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
-													graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
-						        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(i).maxY, MainActivity.sgraph.get(i).minY);
-						        					graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
-						        					graphView.getGraphViewStyle().setTextSize(20);
-						        					graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
-														@Override
-														public String formatLabel(double value, boolean isValueX) {
-															if (isValueX) {
-																if(MainActivity.sgraph.get(currentPos).monthPeriod)
-																	return dateFormat.format(MainActivity.sgraph.get(currentPos).times.get((int) value));
-																else
-																	return dateYearFormat.format(MainActivity.sgraph.get(currentPos).times.get((int) value));
+										View p = (View)v.getParent();
+										View parent = (View)p.getParent();
+										for(int i=0; i<MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.size(); i++)
+					    				{
+											Stock stock= MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(i);
+					    					stockGraph sg = MainActivity.sgraph.get(stock.idsgraph);
+					        				if(v.getId()==i)
+					        				{
+					        					GraphView graphView;
+					        					graphView = new LineGraphView(
+					        								getActivity()
+					        								, ""
+					        						);
+					        					/*
+					        					 * date as label formatter
+					        					 */
+					        					graphView.addSeries(sg.gvs2); // data
+					        					graphView.addSeries(sg.gvs);
+
+					        					graphView.getGraphViewStyle().setNumHorizontalLabels(5);
+					        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(stock.idsgraph).maxY, MainActivity.sgraph.get(stock.idsgraph).minY);
+					        					graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
+					        					graphView.getGraphViewStyle().setTextSize(20);
+												graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
+												graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
+												graphView.getGraphViewStyle().setLegendWidth(160);
+												graphView.setShowLegend(true);
+					        					graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
+													@Override
+													public String formatLabel(double value, boolean isValueX) {
+														if (isValueX) {
+															if(MainActivity.sgraph.get(stockId).monthPeriod)
+																return dateFormat.format(MainActivity.sgraph.get(stockId).times.get((int) value));
+															else
+																return dateYearFormat.format(MainActivity.sgraph.get(stockId).times.get((int) value));														}
+														else{
+															double d= value;
+															String text = Double.toString(Math.abs(d));
+															int integerPlaces = text.indexOf('.');
+															int decimalPlaces = text.length() - integerPlaces - 1;
+															if(decimalPlaces>3)
+															{
+																value=Math.round(d*100.0)/100.0;
 															}
-															else{
-																double d= value;
-																String text = Double.toString(Math.abs(d));
-																int integerPlaces = text.indexOf('.');
-																int decimalPlaces = text.length() - integerPlaces - 1;
-																if(decimalPlaces>3)
-																{
-																	value=Math.round(d*100.0)/100.0;
-																}
-																return ("$"+Double.toString(value));
-															}
+															return ("$"+Double.toString(value));
 														}
-													});
-						        					((LineGraphView) graphView).setDrawBackground(true);
-						        					LinearLayout ln = (LinearLayout) parent.findViewById(v.getId());
-						        					Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.right_slide_graph);
-						        					animation.setStartOffset(0);
-						        					ln.removeAllViews();
-						        					MainActivity.graphs.set(sg.graphPos,graphView);
-						        					ln.addView(MainActivity.graphs.get(sg.graphPos));
-	
-						        					MainActivity.graphs.get(sg.graphPos).startAnimation(animation);
-						        					break;
-						        				}
-						        				//Log.i("test", "got here2");
-						    				}
-	
+													}
+												});
+					        					((LineGraphView) graphView).setDrawBackground(true);
+					        					LinearLayout ln = (LinearLayout) parent.findViewById(v.getId());
+					        					Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.right_slide_graph);
+					        					animation.setStartOffset(0);
+					        					ln.removeAllViews();
+					        					MainActivity.graphs.set(i,graphView);
+					        					ln.addView(MainActivity.graphs.get(i));
+
+					        					MainActivity.graphs.get(i).startAnimation(animation);
+					        					break;
+					        				}
+					        				//Log.i("test", "got here2");
+					    					}
 										}
 									}
 						        });
@@ -1102,13 +908,15 @@ public class MainFragment extends Fragment {
 										View parent = (View)p.getParent();
 										if(MainActivity.betterCharts)
 										{
-											for(int i=0; i<MainActivity.sgraph.size(); i++)
+											for(int i=0; i<MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.size(); i++)
 						    				{
-						    					stockGraph sg = MainActivity.sgraph.get(i);
+												Stock stock= MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(i);
+						    					stockGraph sg = MainActivity.sgraph.get(stock.idsgraph);
 						        				if(v.getId()==i)
 						        				{
 													BarGraph bar = new BarGraph();
-													bar.sgraph = MainActivity.sgraph.get(i);
+													bar.sgraph = sg;
+													bar.isport=stock.unitPrice;
 											    	Intent lineIntent = bar.getIntent(getActivity());
 											        startActivity(lineIntent);
 						        					break;
@@ -1117,63 +925,64 @@ public class MainFragment extends Fragment {
 										}
 										else
 										{
-											for(int i=0; i<MainActivity.sgraph.size(); i++)
-						    				{
-						    					stockGraph sg = MainActivity.sgraph.get(i);
-						        				if(v.getId()==i)
-						        				{
-						        					GraphView graphView;
-						        					graphView = new BarGraphView(
-						        								getActivity()
-						        								, ""
-						        						);
-						        					graphView.addSeries(sg.gvs); // data
-	
-						        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(i).maxY, MainActivity.sgraph.get(i).minY);
-						        					/*
-						        					 * date as label formatter
-						        					 */
-	
-						        					graphView.getGraphViewStyle().setNumHorizontalLabels(5);
-						        					graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
-						        					graphView.getGraphViewStyle().setTextSize(20);
-						        					graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
-													graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
-													graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
-														@Override
-														public String formatLabel(double value, boolean isValueX) {
-															if (isValueX) {
-																if(MainActivity.sgraph.get(currentPos).monthPeriod)
-																	return dateFormat.format(MainActivity.sgraph.get(currentPos).times.get((int) value));
-																else
-																	return dateYearFormat.format(MainActivity.sgraph.get(currentPos).times.get((int) value));
+										for(int i=0; i<MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.size(); i++)
+					    				{
+											Stock stock= MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(i);
+					    					stockGraph sg = MainActivity.sgraph.get(stock.idsgraph);
+					        				if(v.getId()==i)
+					        				{
+					        					GraphView graphView;
+					        					graphView = new BarGraphView(
+					        								getActivity()
+					        								, ""
+					        						);
+					        					graphView.addSeries(sg.gvs2); // data
+					        					graphView.addSeries(sg.gvs);
+
+					        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(stock.idsgraph).maxY, MainActivity.sgraph.get(stock.idsgraph).minY);
+					        					/*
+					        					 * date as label formatter
+					        					 */
+
+					        					graphView.getGraphViewStyle().setNumHorizontalLabels(5);
+					        					graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
+					        					graphView.getGraphViewStyle().setTextSize(20);
+					        					graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
+												graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
+												graphView.getGraphViewStyle().setLegendWidth(160);
+												graphView.setShowLegend(true);
+					        					graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
+													@Override
+													public String formatLabel(double value, boolean isValueX) {
+														if (isValueX) {
+															if(MainActivity.sgraph.get(stockId).monthPeriod)
+																return dateFormat.format(MainActivity.sgraph.get(stockId).times.get((int) value));
+															else
+																return dateYearFormat.format(MainActivity.sgraph.get(stockId).times.get((int) value));														}
+														else{
+															double d= value;
+															String text = Double.toString(Math.abs(d));
+															int integerPlaces = text.indexOf('.');
+															int decimalPlaces = text.length() - integerPlaces - 1;
+															if(decimalPlaces>3)
+															{
+																value=Math.round(d*100.0)/100.0;
 															}
-															else{
-																double d= value;
-																String text = Double.toString(Math.abs(d));
-																int integerPlaces = text.indexOf('.');
-																int decimalPlaces = text.length() - integerPlaces - 1;
-																if(decimalPlaces>3)
-																{
-																	value=Math.round(d*100.0)/100.0;
-																}
-																return ("$"+Double.toString(value));
-															}
+															return ("$"+Double.toString(value));
 														}
-													});
-													Log.d("Id", Integer.toString(v.getId()));
-						        					LinearLayout ln = (LinearLayout) parent.findViewById(v.getId());
-						        					Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.right_slide_graph);
-						        					animation.setStartOffset(0);
-						        					ln.removeAllViews();
-						        					MainActivity.graphs.set(sg.graphPos,graphView);
-						        					ln.addView(MainActivity.graphs.get(sg.graphPos));
-	
-						        					MainActivity.graphs.get(sg.graphPos).startAnimation(animation);
-						        					break;
-						        				}
-						    				}
-	
+													}
+												});
+					        					LinearLayout ln = (LinearLayout) parent.findViewById(v.getId());
+					        					Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.right_slide_graph);
+					        					animation.setStartOffset(0);
+					        					ln.removeAllViews();
+					        					MainActivity.graphs.set(i,graphView);
+					        					ln.addView(MainActivity.graphs.get(i));
+
+					        					MainActivity.graphs.get(i).startAnimation(animation);
+					        					break;
+					        				}
+					    					}
 										}
 									}
 						        });
@@ -1192,10 +1001,10 @@ public class MainFragment extends Fragment {
 								public void onClick(View v) {
 									View p = (View)v.getParent();
 									View parent = (View)p.getParent();
-									for(int i=0; i<MainActivity.sgraph.size(); i++)
+									for(int i=0; i<MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.size(); i++)
 				    				{
-										
-				    					stockGraph sg = MainActivity.sgraph.get(i);
+										Stock stock= MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(i);
+				    					stockGraph sg = MainActivity.sgraph.get(stock.idsgraph);
 				        				if(v.getId()==i)
 				        				{
 				        					int position= sg.pos-1;
@@ -1209,7 +1018,7 @@ public class MainFragment extends Fragment {
 				        					if(position<0)
 				        						position=0;
 				        					int diff = end-position;
-				        					MainActivity.sgraph.get(i).pos=position;
+				        					MainActivity.sgraph.get(stock.idsgraph).pos=position;
 				        					if(diff<5)
 				        					{
 				        						end = end+(5-diff);
@@ -1223,8 +1032,8 @@ public class MainFragment extends Fragment {
 												data[k] = new GraphViewData(x, y); // next day
 												k--;
 											}
-				        					totaldiff = (MainActivity.sgraph.get(i).maxY-MainActivity.sgraph.get(i).minY)/3;
-											minVal=MainActivity.sgraph.get(i).minY;
+				        					totaldiff = (MainActivity.sgraph.get(stock.idsgraph).maxY-MainActivity.sgraph.get(stock.idsgraph).minY)/3;
+											minVal=MainActivity.sgraph.get(stock.idsgraph).minY;
 											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
 											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
 												@Override
@@ -1240,12 +1049,21 @@ public class MainFragment extends Fragment {
 													//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
 												}
 											});
-											GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
+											GraphViewSeries exampleSeries = new GraphViewSeries("Stock Price", seriesStyle1, data);
 				        					sg.gvs = exampleSeries;
-				        					MainActivity.sgraph.set(i, sg);
+				        					GraphViewData[] data1 = new GraphViewData[5];
+											k=4;
+											for (int l=position; l<end; l++) {
+												data1[k] = new GraphViewData(l, stock.unitPrice);
+												k--;
+											}
+											GraphViewSeries BoughtPriceSeries = new GraphViewSeries("Bought Price", new GraphViewSeriesStyle(Color.rgb(0, 0, 250), 3), data1);
+											sg.gvs2=BoughtPriceSeries;
+				        					MainActivity.sgraph.set(stock.idsgraph, sg);
 				        					
-				        					MainActivity.graphs.get(sg.graphPos).removeAllSeries();
-				        					MainActivity.graphs.get(sg.graphPos).addSeries(exampleSeries); // data
+				        					MainActivity.graphs.get(i).removeAllSeries();
+				        					MainActivity.graphs.get(i).addSeries(BoughtPriceSeries);
+				        					MainActivity.graphs.get(i).addSeries(exampleSeries); // data
 				        					
 				        					
 				        					/*MainActivity.graphs.get(i).setCustomLabelFormatter(new CustomLabelFormatter() {
@@ -1284,10 +1102,10 @@ public class MainFragment extends Fragment {
 								public void onClick(View v) {
 									View p = (View)v.getParent();
 									View parent = (View)p.getParent();
-									for(int i=0; i<MainActivity.sgraph.size(); i++)
+									for(int i=0; i<MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.size(); i++)
 				    				{
-										
-				    					stockGraph sg = MainActivity.sgraph.get(i);
+										Stock stock= MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(i);
+				    					stockGraph sg = MainActivity.sgraph.get(stock.idsgraph);
 				        				if(v.getId()==i)
 				        				{
 				        					int position= sg.pos-5;
@@ -1301,7 +1119,7 @@ public class MainFragment extends Fragment {
 				        					if(position<0)
 				        						position=0;
 				        					int diff = end-position;
-				        					MainActivity.sgraph.get(i).pos=position;
+				        					MainActivity.sgraph.get(stock.idsgraph).pos=position;
 				        					if(diff<5)
 				        					{
 				        						end = end+(5-diff);
@@ -1315,8 +1133,8 @@ public class MainFragment extends Fragment {
 												data[k] = new GraphViewData(x, y); // next day
 												k--;
 											}
-				        					totaldiff = (MainActivity.sgraph.get(i).maxY-MainActivity.sgraph.get(i).minY)/3;
-											minVal=MainActivity.sgraph.get(i).minY;
+				        					totaldiff = (MainActivity.sgraph.get(stock.idsgraph).maxY-MainActivity.sgraph.get(stock.idsgraph).minY)/3;
+											minVal=MainActivity.sgraph.get(stock.idsgraph).minY;
 											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
 											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
 												@Override
@@ -1332,12 +1150,21 @@ public class MainFragment extends Fragment {
 													//return Color.rgb((int)(150-((data.getY()/10)*100)), (int)(150+((data.getY()/10)*150)), (int)(150-((data.getY()/10)*150)));
 												}
 											});
-											GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
+											GraphViewSeries exampleSeries = new GraphViewSeries("Stock Price", seriesStyle1, data);
 				        					sg.gvs = exampleSeries;
-				        					MainActivity.sgraph.set(i, sg);
+				        					GraphViewData[] data1 = new GraphViewData[5];
+											k=4;
+											for (int l=position; l<end; l++) {
+												data1[k] = new GraphViewData(l, stock.unitPrice);
+												k--;
+											}
+											GraphViewSeries BoughtPriceSeries = new GraphViewSeries("Bought Price", new GraphViewSeriesStyle(Color.rgb(0, 0, 250), 3), data1);
+											sg.gvs2=BoughtPriceSeries;
+				        					MainActivity.sgraph.set(stock.idsgraph, sg);
 				        					
-				        					MainActivity.graphs.get(sg.graphPos).removeAllSeries();
-				        					MainActivity.graphs.get(sg.graphPos).addSeries(exampleSeries); // data
+				        					MainActivity.graphs.get(i).removeAllSeries();
+				        					MainActivity.graphs.get(i).addSeries(BoughtPriceSeries);
+				        					MainActivity.graphs.get(i).addSeries(exampleSeries); // data
 				        					
 				        					
 				        					/*MainActivity.graphs.get(i).setCustomLabelFormatter(new CustomLabelFormatter() {
@@ -1365,7 +1192,8 @@ public class MainFragment extends Fragment {
 					        
 
 					        TextView title = new TextView(getActivity());
-					        title.setText(MainActivity.sgraph.get(i).stockName);
+					        title.setText(stock.Name);
+					        title.setId(5);
 					        title.setGravity(Gravity.CENTER);
 					        title.setTextColor(Color.WHITE);
 					        title.setTextSize(23f);
@@ -1377,8 +1205,8 @@ public class MainFragment extends Fragment {
 							LL.addView(LL3);
 							LL.addView(LL2);
 
-							LinearLayout linl= (LinearLayout) mainView.findViewById(R.id.graphs);
-						    linl.addView(LL);
+							LinearLayout linl1= (LinearLayout) mainView.findViewById(R.id.graphs);
+						    linl1.addView(LL);
 
 					        setRetainInstance(false);
 
@@ -1401,13 +1229,18 @@ public class MainFragment extends Fragment {
         	return mainView;
     }
     
+
+    
+    
+    
+    
     private View.OnClickListener buttonClickListener = new View.OnClickListener() {
 
     	@Override
     	public void onClick(View v) {
 
     	    //check which green ball was clicked
-    	        int selected_item = (Integer) v.getTag();
+    	        //int selected_item = (Integer) v.getTag();
     	        /*switch(selected_item)
     	        {
     	        case 1: {

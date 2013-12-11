@@ -46,22 +46,20 @@ import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.Button;
+
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.LinearLayout.LayoutParams;
 
-public class CiscoFragment extends Fragment {
+public class OneStockFragment extends Fragment {
 
 	private final SimpleDateFormat dateFormat = new SimpleDateFormat("d/M");
 	private final SimpleDateFormat dateYearFormat = new SimpleDateFormat("MMM");
 	private ProgressDialog pd;
 	private boolean firstRunning=true;
-	private stockGraph cisco;
-	private realtimeGraph cisco2;
+	private stockGraph onestock;
+	private realtimeGraph onestock2;
 	private int graphPos=0, graphPos2=0;
 	private final Handler mHandler = new Handler();
 	private Runnable mTimer2;
@@ -105,9 +103,8 @@ public class CiscoFragment extends Fragment {
 				final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 				MainActivity.graphs = new ArrayList<GraphView>(); 
 				stockGraph sg = new stockGraph();
-				sg.stockAbrev = "CSCO";
-				sg.stockName= "Cisco Systems, Inc.";
-				sg.id=3;
+				sg.stockAbrev = MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(MainActivity.stockIndex).subName;
+				sg.stockName= MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(MainActivity.stockIndex).Name;
 				sg.endDate = Calendar.getInstance();
 				sg.beginDate = Calendar.getInstance();
 				if(MainActivity.monthPeriodGraph && !MainActivity.otherPeriod)
@@ -138,8 +135,8 @@ public class CiscoFragment extends Fragment {
 								&& sg.endDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).endDate.get(Calendar.YEAR))
 						{
 							exists=true;
-							cisco = MainActivity.sgraph.get(i);
-							//cisco2 = MainActivity.sgraph.get(i);
+							onestock = MainActivity.sgraph.get(i);
+							//onestock2 = MainActivity.sgraph.get(i);
 							graphPos=i;
 							break;
 						}
@@ -149,11 +146,11 @@ public class CiscoFragment extends Fragment {
 					{
 						MainActivity.sgraph.add(sg);
 						graphPos = MainActivity.sgraph.size()-1;
-						cisco = sg;
-						//cisco2 = sg;
+						onestock = sg;
+						//onestock2 = sg;
 					}
 				  //Log.d(Integer.toString(i),Integer.toString(MainActivity.sgraph.get(i).points.size()));
-				  if(cisco.points.size()<1)
+				  if(onestock.points.size()<1)
 				  {
 					HttpURLConnection con = null;
 				    String payload = "Error";
@@ -162,19 +159,19 @@ public class CiscoFragment extends Fragment {
 				    try {
 				    	  boolean first=true;
 				    	  //Log.d("date", df.format(MainActivity.sgraph.get(i).beginDate.getTime()));
-				    	  int bmonth = cisco.beginDate.get(Calendar.MONTH);
-				    	  int bday = cisco.beginDate.get(Calendar.DAY_OF_MONTH);
-				    	  int byear = cisco.beginDate.get(Calendar.YEAR);
+				    	  int bmonth = onestock.beginDate.get(Calendar.MONTH);
+				    	  int bday = onestock.beginDate.get(Calendar.DAY_OF_MONTH);
+				    	  int byear = onestock.beginDate.get(Calendar.YEAR);
 				    	  
-				    	  int emonth = cisco.endDate.get(Calendar.MONTH);
-				    	  int eday = cisco.endDate.get(Calendar.DAY_OF_MONTH);
-				    	  int eyear = cisco.endDate.get(Calendar.YEAR);
+				    	  int emonth = onestock.endDate.get(Calendar.MONTH);
+				    	  int eday = onestock.endDate.get(Calendar.DAY_OF_MONTH);
+				    	  int eyear = onestock.endDate.get(Calendar.YEAR);
 				          // Build RESTful query (GET)
 				    	  URL url;
 				    	  if(MainActivity.monthPeriodGraph)
-				    		  url = new URL("http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+cisco.stockAbrev);
+				    		  url = new URL("http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+onestock.stockAbrev);
 				    	  else
-					          url = new URL("http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=m&s="+cisco.stockAbrev);
+					          url = new URL("http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=m&s="+onestock.stockAbrev);
 
 				    	  //Log.d("url", "http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+MainActivity.sgraph.get(i).stockAbrev);
 				          con = (HttpURLConnection) url.openConnection();
@@ -188,7 +185,7 @@ public class CiscoFragment extends Fragment {
 				          
 				          // Read results from the query
 				          BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8" ));
-				          sg = cisco;
+				          sg = onestock;
 				          int timercounter=0;
 				          while((payload = reader.readLine())!=null)
 				          {
@@ -219,7 +216,7 @@ public class CiscoFragment extends Fragment {
 				          }
 				          sg.NoPoints=numDays;
 				          MainActivity.sgraph.set(graphPos, sg);
-				          cisco=sg;
+				          onestock=sg;
 				          reader.close();
 				      } catch (IOException e) {
 				    } finally {
@@ -228,7 +225,7 @@ public class CiscoFragment extends Fragment {
 				    }
 
 				    MainActivity.sgraph.get(graphPos).NoPoints=numDays;
-				    cisco.NoPoints=numDays;
+				    onestock.NoPoints=numDays;
 				}
 				return params[0];
 			}
@@ -268,7 +265,7 @@ public class CiscoFragment extends Fragment {
 						{
 
 						        //Log.d(MainActivity.sgraph.get(i).stockName, Integer.toString(MainActivity.sgraph.get(i).NoPoints));
-								if(cisco.NoPoints<=1)							
+								if(onestock.NoPoints<=1)							
 								{
 									int num = 1;
 									GraphViewData[] data = new GraphViewData[2];
@@ -321,21 +318,21 @@ public class CiscoFragment extends Fragment {
 							GraphViewData[] data = new GraphViewData[5];
 							int k=4;
 							int position=5;
-							cisco.pos=position;
+							onestock.pos=position;
 							for (int j=0; j<position; j++) {
-								long x=cisco.points.get(j).second;
-								double y=cisco.points.get(j).first;
+								long x=onestock.points.get(j).second;
+								double y=onestock.points.get(j).first;
 								data[k] = new GraphViewData(x, y); // next day
 								k--;
 							}
-							totaldiff = (cisco.maxY-cisco.minY)/3;
+							totaldiff = (onestock.maxY-onestock.minY)/3;
 							GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
 							seriesStyle1.setValueDependentColor(new ValueDependentColor() {
 								@Override
 								public int get(GraphViewDataInterface data) {
-									if(data.getY()<= (cisco.minY+totaldiff*1))
+									if(data.getY()<= (onestock.minY+totaldiff*1))
 										return Color.rgb(0, 50, 150);
-									else if(data.getY()<= (cisco.minY+totaldiff*2))
+									else if(data.getY()<= (onestock.minY+totaldiff*2))
 										return Color.rgb(50, 100, 200);
 									else
 										return Color.rgb(100, 150, 255);
@@ -345,7 +342,7 @@ public class CiscoFragment extends Fragment {
 								}
 							});
 							GraphViewSeries exampleSeries = new GraphViewSeries("stock price variance", seriesStyle1, data);
-							cisco.gvs=exampleSeries;
+							onestock.gvs=exampleSeries;
 							GraphView graphView;
 							graphView = new LineGraphView(
 										getActivity()
@@ -353,7 +350,7 @@ public class CiscoFragment extends Fragment {
 								);
 							((LineGraphView) graphView).setDrawBackground(true);
 							graphView.addSeries(exampleSeries); // data
-							graphView.setManualYAxisBounds(cisco.maxY, cisco.minY);
+							graphView.setManualYAxisBounds(onestock.maxY, onestock.minY);
 							/*
 							 * date as label formatter
 							 */
@@ -361,10 +358,10 @@ public class CiscoFragment extends Fragment {
 								@Override
 								public String formatLabel(double value, boolean isValueX) {
 									if (isValueX) {
-										if(cisco.monthPeriod)
-											return dateFormat.format(cisco.times.get((int) value));
+										if(onestock.monthPeriod)
+											return dateFormat.format(onestock.times.get((int) value));
 										else
-											return dateYearFormat.format(cisco.times.get((int) value));
+											return dateYearFormat.format(onestock.times.get((int) value));
 									}
 									else{
 										double d= value;
@@ -416,7 +413,7 @@ public class CiscoFragment extends Fragment {
 							LL3.setLayoutParams(LLParams3);
 
 							MainActivity.graphs.add(graphView);
-							cisco.graphPos=MainActivity.graphs.size()-1;
+							onestock.graphPos=MainActivity.graphs.size()-1;
 							LL3.addView(MainActivity.graphs.get(MainActivity.graphs.size()-1));
 							LayoutParams LLParams4 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
 							LLParams4.setMargins(20, 0, 20, 0);
@@ -478,14 +475,14 @@ public class CiscoFragment extends Fragment {
 												data[k] = new GraphViewData(x, y); // next day
 												k--;
 											}
-				        					totaldiff = (cisco.maxY-cisco.minY)/3;
+				        					totaldiff = (onestock.maxY-onestock.minY)/3;
 											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
 											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
 												@Override
 												public int get(GraphViewDataInterface data) {
-													if(data.getY()<= (cisco.minY+totaldiff*1))
+													if(data.getY()<= (onestock.minY+totaldiff*1))
 														return Color.rgb(0, 50, 150);
-													else if(data.getY()<= (cisco.minY+totaldiff*2))
+													else if(data.getY()<= (onestock.minY+totaldiff*2))
 														return Color.rgb(50, 100, 200);
 													else
 														return Color.rgb(100, 150, 255);
@@ -566,14 +563,14 @@ public class CiscoFragment extends Fragment {
 												data[k] = new GraphViewData(x, y); // next day
 												k--;
 											}
-				        					totaldiff = (cisco.maxY-cisco.minY)/3;
+				        					totaldiff = (onestock.maxY-onestock.minY)/3;
 											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
 											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
 												@Override
 												public int get(GraphViewDataInterface data) {
-													if(data.getY()<= (cisco.minY+totaldiff*1))
+													if(data.getY()<= (onestock.minY+totaldiff*1))
 														return Color.rgb(0, 50, 150);
-													else if(data.getY()<= (cisco.minY+totaldiff*2))
+													else if(data.getY()<= (onestock.minY+totaldiff*2))
 														return Color.rgb(50, 100, 200);
 													else
 														return Color.rgb(100, 150, 255);
@@ -621,7 +618,7 @@ public class CiscoFragment extends Fragment {
 										if(MainActivity.betterCharts)
 										{
 													LinearGraph lin = new LinearGraph();
-													lin.sgraph = cisco;
+													lin.sgraph = onestock;
 											    	Intent lineIntent = lin.getIntent(getActivity());
 											        startActivity(lineIntent);
 
@@ -652,10 +649,10 @@ public class CiscoFragment extends Fragment {
 					        						@Override
 					        						public String formatLabel(double value, boolean isValueX) {
 					        							if (isValueX) {
-					        								if(cisco.monthPeriod)
-																return dateFormat.format(cisco.times.get((int) value));
+					        								if(onestock.monthPeriod)
+																return dateFormat.format(onestock.times.get((int) value));
 															else
-																return dateYearFormat.format(cisco.times.get((int) value));
+																return dateYearFormat.format(onestock.times.get((int) value));
 					        							}
 					        							else{
 					        								double d= value;
@@ -675,10 +672,10 @@ public class CiscoFragment extends Fragment {
 					        					Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.right_slide_graph);
 					        					animation.setStartOffset(0);
 					        					ln.removeAllViews();
-					        					MainActivity.graphs.set(cisco.graphPos,graphView);
-					        					ln.addView(MainActivity.graphs.get(cisco.graphPos));
+					        					MainActivity.graphs.set(onestock.graphPos,graphView);
+					        					ln.addView(MainActivity.graphs.get(onestock.graphPos));
 
-					        					MainActivity.graphs.get(cisco.graphPos).startAnimation(animation);
+					        					MainActivity.graphs.get(onestock.graphPos).startAnimation(animation);
 					        				}
 					        				//Log.i("test", "got here2");
 									}
@@ -699,7 +696,7 @@ public class CiscoFragment extends Fragment {
 										if(MainActivity.betterCharts)
 										{
 													BarGraph bar = new BarGraph();
-													bar.sgraph = cisco;
+													bar.sgraph = onestock;
 											    	Intent lineIntent = bar.getIntent(getActivity());
 											        startActivity(lineIntent);
 
@@ -731,10 +728,10 @@ public class CiscoFragment extends Fragment {
 					        						@Override
 					        						public String formatLabel(double value, boolean isValueX) {
 					        							if (isValueX) {
-					        								if(cisco.monthPeriod)
-																return dateFormat.format(cisco.times.get((int) value));
+					        								if(onestock.monthPeriod)
+																return dateFormat.format(onestock.times.get((int) value));
 															else
-																return dateYearFormat.format(cisco.times.get((int) value));
+																return dateYearFormat.format(onestock.times.get((int) value));
 					        							}
 					        							else{
 					        								double d= value;
@@ -753,10 +750,10 @@ public class CiscoFragment extends Fragment {
 					        					Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.right_slide_graph);
 					        					animation.setStartOffset(0);
 					        					ln.removeAllViews();
-					        					MainActivity.graphs.set(cisco.graphPos,graphView);
-					        					ln.addView(MainActivity.graphs.get(cisco.graphPos));
+					        					MainActivity.graphs.set(onestock.graphPos,graphView);
+					        					ln.addView(MainActivity.graphs.get(onestock.graphPos));
 
-					        					MainActivity.graphs.get(cisco.graphPos).startAnimation(animation);
+					        					MainActivity.graphs.get(onestock.graphPos).startAnimation(animation);
 					        				}
 									}
 						        });
@@ -802,14 +799,14 @@ public class CiscoFragment extends Fragment {
 												data[k] = new GraphViewData(x, y); // next day
 												k--;
 											}
-				        					totaldiff = (cisco.maxY-cisco.minY)/3;
+				        					totaldiff = (onestock.maxY-onestock.minY)/3;
 											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
 											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
 												@Override
 												public int get(GraphViewDataInterface data) {
-													if(data.getY()<= (cisco.minY+totaldiff*1))
+													if(data.getY()<= (onestock.minY+totaldiff*1))
 														return Color.rgb(0, 50, 150);
-													else if(data.getY()<= (cisco.minY+totaldiff*2))
+													else if(data.getY()<= (onestock.minY+totaldiff*2))
 														return Color.rgb(50, 100, 200);
 													else
 														return Color.rgb(100, 150, 255);
@@ -887,14 +884,14 @@ public class CiscoFragment extends Fragment {
 												data[k] = new GraphViewData(x, y); // next day
 												k--;
 											}
-				        					totaldiff = (cisco.maxY-cisco.minY)/3;
+				        					totaldiff = (onestock.maxY-onestock.minY)/3;
 											GraphViewSeriesStyle seriesStyle1 = new GraphViewSeriesStyle();
 											seriesStyle1.setValueDependentColor(new ValueDependentColor() {
 												@Override
 												public int get(GraphViewDataInterface data) {
-													if(data.getY()<= (cisco.minY+totaldiff*1))
+													if(data.getY()<= (onestock.minY+totaldiff*1))
 														return Color.rgb(0, 50, 150);
-													else if(data.getY()<= (cisco.minY+totaldiff*2))
+													else if(data.getY()<= (onestock.minY+totaldiff*2))
 														return Color.rgb(50, 100, 200);
 													else
 														return Color.rgb(100, 150, 255);
@@ -933,7 +930,7 @@ public class CiscoFragment extends Fragment {
 						        
 						        
 					        TextView title = new TextView(getActivity());
-					        title.setText(cisco.stockName);
+					        title.setText(onestock.stockName);
 					        title.setGravity(Gravity.CENTER);
 					        title.setTextColor(Color.WHITE);
 					        title.setTextSize(23f);
@@ -950,24 +947,24 @@ public class CiscoFragment extends Fragment {
 							    
 							    
 							    realtimeGraph sg = new realtimeGraph();
-							    sg.stockAbrev = "CSCO";
-								sg.stockName= "Cisco Systems, Inc.";
-								sg.id=3;
+							    sg.stockAbrev = MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(MainActivity.stockIndex).subName;
+								sg.stockName= MainActivity.usr.portfolios.get(MainActivity.portIndex).stocks.get(MainActivity.stockIndex).Name;
+								sg.id=1;
 							    boolean exists=false;
 								for(int i=0; i< MainActivity.rgraph.size();i++)
 								{
-									if(cisco.stockName.equals(MainActivity.rgraph.get(i).stockName))
+									if(onestock.stockName.equals(MainActivity.rgraph.get(i).stockName))
 									{
 										{
 											exists=true;
-											cisco2 = MainActivity.rgraph.get(i);
-											//cisco2 = MainActivity.sgraph.get(i);
+											onestock2 = MainActivity.rgraph.get(i);
+											//onestock2 = MainActivity.sgraph.get(i);
 											graphPos2=i;
-											graphView2 = cisco2.gvs;
+											graphView2 = onestock2.gvs;
 											iter=MainActivity.rgraph.get(i).points.size();
 											Log.d("points", MainActivity.rgraph.get(i).points.get(MainActivity.rgraph.get(i).points.size()-1).second+" "+MainActivity.rgraph.get(i).points.get(MainActivity.rgraph.get(i).points.size()-1).first
 													);
-											if (cisco2.isPlay)
+											if (onestock2.isPlay)
 												mHandler.removeCallbacks(mTimer2);
 											break;
 										}
@@ -977,39 +974,39 @@ public class CiscoFragment extends Fragment {
 									{
 										MainActivity.rgraph.add(sg);
 										graphPos2 = MainActivity.rgraph.size()-1;
-										cisco2 = sg;
+										onestock2 = sg;
 										/*for (int j=0; j<31; j++) {
 											long x=0;
-											double y=cisco.points.get(cisco.points.size()-1).first;
-											cisco2.points.add(new Pair<Double,Long>(y,x));
+											double y=onestock.points.get(onestock.points.size()-1).first;
+											onestock2.points.add(new Pair<Double,Long>(y,x));
 										}*/
 										data = new GraphViewData[0];
 										//position=5;
-										cisco2.pos=0;
+										onestock2.pos=0;
 										/*for (int j=0; j<31; j++) {
-											long x=cisco2.points.get(j).second;
-											double y=cisco2.points.get(j).first;
+											long x=onestock2.points.get(j).second;
+											double y=onestock2.points.get(j).first;
 											data[j] = new GraphViewData(x, y); // next day
 											//k--;
 										}*/
 									    graphView2 = new GraphViewSeries(data);
 									    graphView2.getStyle().color = Color.RED;
-									    cisco2.maxY=(double) cisco.points.get(cisco.points.size()-1).first;
-										cisco2.minY=(double) 0;
+									    onestock2.maxY=(double) onestock.points.get(onestock.points.size()-1).first;
+										onestock2.minY=(double) 0;
 									}
 
 								// graph with custom labels and drawBackground
 									graphView = new LineGraphView(
 											getActivity()
-											, ""/*cisco2.stockName+" Realtime Graph"*/
+											, ""/*onestock2.stockName+" Realtime Graph"*/
 									);
 									//((LineGraphView) graphView).setDrawBackground(true);
 									
 									
 								graphView.addSeries(graphView2); // data
-								cisco2.gvs = graphView2;
-								MainActivity.rgraph.set(graphPos2, cisco2);
-								graphView.setViewPort(cisco2.pos, 4);
+								onestock2.gvs = graphView2;
+								MainActivity.rgraph.set(graphPos2, onestock2);
+								graphView.setViewPort(onestock2.pos, 4);
 								graphView.setScrollable(true);
 								graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
 								graphView.getGraphViewStyle().setNumHorizontalLabels(5);
@@ -1017,19 +1014,19 @@ public class CiscoFragment extends Fragment {
 								graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
 								graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
 								
-								graphView.setManualYAxisBounds(cisco2.maxY, cisco2.minY);
+								graphView.setManualYAxisBounds(onestock2.maxY, onestock2.minY);
 								
 								graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
 									@Override
 									public String formatLabel(double value, boolean isValueX) {
 										if (isValueX) {
-											if(value<0 || value>=cisco2.times.size())
+											if(value<0 || value>=onestock2.times.size())
 												{
-													Log.d(Double.toString(value),Integer.toString(cisco2.times.size()));
+													Log.d(Double.toString(value),Integer.toString(onestock2.times.size()));
 													return "0:00";
 												}
 											else
-												return cisco2.times.get((int) value);
+												return onestock2.times.get((int) value);
 										}
 										else{
 													double d= value;
@@ -1060,7 +1057,7 @@ public class CiscoFragment extends Fragment {
 								LLR1.setLayoutParams(LLParamsR1);
 
 								MainActivity.graphs.add(graphView);
-								cisco2.graphPos=MainActivity.graphs.size()-1;
+								onestock2.graphPos=MainActivity.graphs.size()-1;
 								LLR1.addView(MainActivity.graphs.get(MainActivity.graphs.size()-1));
 
 								
@@ -1074,7 +1071,7 @@ public class CiscoFragment extends Fragment {
 								LLR2.setLayoutParams(LLParamsR2);
 								
 								//MainActivity.graphs.add(graphView);
-								//cisco.graphPos=MainActivity.graphs.size()-1;
+								//onestock.graphPos=MainActivity.graphs.size()-1;
 								//LL3.addView(MainActivity.graphs.get(MainActivity.graphs.size()-1));
 								LayoutParams LLParamsR4 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
 								LLParamsR4.setMargins(10, 0, 10, 0);
@@ -1170,12 +1167,12 @@ public class CiscoFragment extends Fragment {
 						        LLR2.addView(btnR);
 						        
 						        ImageButton btnR1 = new ImageButton(getActivity());
-						        if(cisco2.isPlay)
+						        if(onestock2.isPlay)
 						        	Log.d("play", "true");
 						        else
 						        	Log.d("play", "false");
 						        
-						        if(cisco2.isPlay)
+						        if(onestock2.isPlay)
 								 	btnR1.setImageResource(R.drawable.ic_action_play);
 							       else
 							    	 btnR1.setImageResource(R.drawable.ic_action_pause);
@@ -1188,21 +1185,21 @@ public class CiscoFragment extends Fragment {
 							       	 
 										@Override
 										public void onClick(View v) {
-											if(cisco2.isPlay)
+											if(onestock2.isPlay)
 									        	Log.d("play", "true");
 									        else
 									        	Log.d("play", "false");
 											
-											 if(!cisco2.isPlay){
+											 if(!onestock2.isPlay){
 												 	mHandler.removeCallbacks(mTimer2);
 												 	((ImageButton) v).setImageResource(R.drawable.ic_action_play);
-												 	cisco2.isPlay=true;
-												 	MainActivity.rgraph.set(graphPos2,cisco2);
+												 	onestock2.isPlay=true;
+												 	MainActivity.rgraph.set(graphPos2,onestock2);
 											       }
 											       else{
-											    	   cisco2.isPlay=false;
+											    	   onestock2.isPlay=false;
 											    	   mHandler.post(mTimer2);
-											    	   MainActivity.rgraph.set(graphPos2,cisco2);
+											    	   MainActivity.rgraph.set(graphPos2,onestock2);
 											    	   ((ImageButton) v).setImageResource(R.drawable.ic_action_pause); 
 											       }
 										}
@@ -1221,7 +1218,7 @@ public class CiscoFragment extends Fragment {
 							       	 
 										@Override
 										public void onClick(View v) {
-											if(!cisco2.isPlay)
+											if(!onestock2.isPlay)
 											{
 												mHandler.removeCallbacks(mTimer2);
 												mHandler.post(mTimer2);
@@ -1243,39 +1240,39 @@ public class CiscoFragment extends Fragment {
 									public void onClick(View v) {
 										View p = (View)v.getParent();
 										View parent = (View)p.getParent();
-										if(!cisco2.isPlay)
+										if(!onestock2.isPlay)
 											mHandler.removeCallbacksAndMessages(mTimer2);
 										GraphViewData[] data = new GraphViewData[0];
 										//position=5;
-										cisco2.pos=0;
+										onestock2.pos=0;
 										/*for (int j=0; j<31; j++) {
-											long x=cisco2.points.get(j).second;
-											double y=cisco2.points.get(j).first;
+											long x=onestock2.points.get(j).second;
+											double y=onestock2.points.get(j).first;
 											data[j] = new GraphViewData(x, y); // next day
 											//k--;
 										}*/
 									    graphView2 = new GraphViewSeries(data);
 									    graphView2.getStyle().color = Color.RED;
-									    cisco2.points= new ArrayList<Pair<Double,Long>>();
-									    MainActivity.rgraph.set(graphPos2,cisco2);
-									    cisco2.maxY=(double) cisco.points.get(cisco.points.size()-1).first;
-										cisco2.minY=(double) 0;
-										cisco2.times=new ArrayList<String>();
-										//MainActivity.graphs.get(cisco2.graphPos).removeAllSeries();
-				    					//MainActivity.graphs.get(cisco2.graphPos).addSeries(graphView2);
+									    onestock2.points= new ArrayList<Pair<Double,Long>>();
+									    MainActivity.rgraph.set(graphPos2,onestock2);
+									    onestock2.maxY=(double) onestock.points.get(onestock.points.size()-1).first;
+										onestock2.minY=(double) 0;
+										onestock2.times=new ArrayList<String>();
+										//MainActivity.graphs.get(onestock2.graphPos).removeAllSeries();
+				    					//MainActivity.graphs.get(onestock2.graphPos).addSeries(graphView2);
 				    					
 				    					
 				    					GraphView graphView = new LineGraphView(
 												getActivity()
-												, ""/*cisco2.stockName+" Realtime Graph"*/
+												, ""/*onestock2.stockName+" Realtime Graph"*/
 										);
 										//((LineGraphView) graphView).setDrawBackground(true);
 										
 										
 									graphView.addSeries(graphView2); // data
-									cisco2.gvs = graphView2;
-									MainActivity.rgraph.set(graphPos2, cisco2);
-									graphView.setViewPort(cisco2.pos, 4);
+									onestock2.gvs = graphView2;
+									MainActivity.rgraph.set(graphPos2, onestock2);
+									graphView.setViewPort(onestock2.pos, 4);
 									graphView.setScrollable(true);
 									graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
 									graphView.getGraphViewStyle().setNumHorizontalLabels(5);
@@ -1283,19 +1280,19 @@ public class CiscoFragment extends Fragment {
 									graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
 									graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
 									
-									graphView.setManualYAxisBounds(cisco2.maxY, cisco2.minY);
+									graphView.setManualYAxisBounds(onestock2.maxY, onestock2.minY);
 									
 									graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
 										@Override
 										public String formatLabel(double value, boolean isValueX) {
 											if (isValueX) {
-												if(value<0 || value>=cisco2.times.size())
+												if(value<0 || value>=onestock2.times.size())
 													{
-														Log.d(Double.toString(value),Integer.toString(cisco2.times.size()));
+														Log.d(Double.toString(value),Integer.toString(onestock2.times.size()));
 														return "0:00";
 													}
 												else
-													return cisco2.times.get((int) value);
+													return onestock2.times.get((int) value);
 											}
 											else{
 														double d= value;
@@ -1315,11 +1312,11 @@ public class CiscoFragment extends Fragment {
 			        					Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.right_slide_graph);
 			        					animation.setStartOffset(0);
 			        					ln.removeAllViews();
-			        					MainActivity.graphs.set(cisco2.graphPos, graphView);
-			        					ln.addView(MainActivity.graphs.get(cisco2.graphPos));
+			        					MainActivity.graphs.set(onestock2.graphPos, graphView);
+			        					ln.addView(MainActivity.graphs.get(onestock2.graphPos));
 
-			        					MainActivity.graphs.get(cisco2.graphPos).startAnimation(animation);
-			        					if(!cisco2.isPlay)
+			        					MainActivity.graphs.get(onestock2.graphPos).startAnimation(animation);
+			        					if(!onestock2.isPlay)
 			        						mHandler.post(mTimer2);
 										
 									}	
@@ -1423,8 +1420,8 @@ public class CiscoFragment extends Fragment {
 						        					sg.gvs = exampleSeries;
 						        					MainActivity.rgraph.set(graphPos2, sg);
 						        					
-						        					MainActivity.graphs.get(cisco2.graphPos).removeAllSeries();
-						        					MainActivity.graphs.get(cisco2.graphPos).addSeries(exampleSeries); // data*/
+						        					MainActivity.graphs.get(onestock2.graphPos).removeAllSeries();
+						        					MainActivity.graphs.get(onestock2.graphPos).addSeries(exampleSeries); // data*/
 						        					
 						        					
 						        					/*MainActivity.graphs.get(i).setCustomLabelFormatter(new CustomLabelFormatter() {
@@ -1448,7 +1445,7 @@ public class CiscoFragment extends Fragment {
 								
 								
 						        TextView valueTV = new TextView(getActivity());
-						        valueTV.setText(cisco2.stockName+" Realtime Graph");
+						        valueTV.setText(onestock2.stockName+" Realtime Graph");
 						        valueTV.setId(5);
 						        valueTV.setGravity(Gravity.CENTER);
 						        valueTV.setTextColor(Color.WHITE);
@@ -1465,7 +1462,7 @@ public class CiscoFragment extends Fragment {
 								
 
 							}
-								if(cisco2.isPlay)
+								if(onestock2.isPlay)
 									mHandler.removeCallbacks(mTimer2);
 								
 						        setRetainInstance(false);
@@ -1515,7 +1512,7 @@ public class CiscoFragment extends Fragment {
 						
 					@Override
 					protected Void doInBackground(Void... arg0) {
-						if(cisco2!=null && !cisco2.isPlay)
+						if(onestock2!=null && !onestock2.isPlay)
 						{
 						HttpURLConnection con = null;
 						String payload = "Error";
@@ -1524,7 +1521,7 @@ public class CiscoFragment extends Fragment {
 						try {
 							  
 						      // Build RESTful query (GET)
-						      URL url = new URL("http://finance.yahoo.com/d/quotes?f=sl1d1t1v&s="+cisco.stockAbrev);
+						      URL url = new URL("http://finance.yahoo.com/d/quotes?f=sl1d1t1v&s="+onestock.stockAbrev);
 						      //Log.d("url", "http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+MainActivity.sgraph.get(i).stockAbrev);
 						      con = (HttpURLConnection) url.openConnection();
 						      con.setReadTimeout(10000);
@@ -1537,7 +1534,7 @@ public class CiscoFragment extends Fragment {
 						      
 						      // Read results from the query
 						      BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8" ));
-						      realtimeGraph sg = cisco2;
+						      realtimeGraph sg = onestock2;
 						      while((payload = reader.readLine())!=null)
 						      {
 						    		  numDays++;
@@ -1551,10 +1548,10 @@ public class CiscoFragment extends Fragment {
 						    			  time = Integer.toString(timer)+split[3].substring(split[3].indexOf(":"),split[3].length()-3);
 						    		  }
 						    		  val=Double.parseDouble(split[1]);
-						    		  if(val>cisco2.maxY)
-						    			  cisco2.maxY=val;
-						    		  if(val<cisco2.minY || cisco2.minY==0)
-						    			  cisco2.minY=val;
+						    		  if(val>onestock2.maxY)
+						    			  onestock2.maxY=val;
+						    		  if(val<onestock2.minY || onestock2.minY==0)
+						    			  onestock2.minY=val;
 						    		  //time= Long.parseLong(split[3]);
 						    		  Pair<Double,Long> p = new Pair<Double,Long>(val,(long) iter);
 						    		  iter++;
@@ -1598,8 +1595,8 @@ public class CiscoFragment extends Fragment {
 						      /*if(!sameNumber)
 						      {*/
 						    	sg.NoPoints=numDays;
-						      	cisco2=sg;
-						      	MainActivity.rgraph.set(graphPos2,cisco2);
+						      	onestock2=sg;
+						      	MainActivity.rgraph.set(graphPos2,onestock2);
 						      //}
 						      reader.close();
 							
@@ -1616,17 +1613,17 @@ public class CiscoFragment extends Fragment {
 					@Override
 					protected void onPostExecute(Void result) {
 						//Log.d("damn", "ok");
-						if(cisco2!=null && !cisco2.isPlay)
+						if(onestock2!=null && !onestock2.isPlay)
 						{
-							//Log.d("point", Long.toString(cisco2.points.get(cisco2.points.size()-1).second)+"-"+Double.toString(cisco2.points.get(cisco2.points.size()-1).first));
+							//Log.d("point", Long.toString(onestock2.points.get(onestock2.points.size()-1).second)+"-"+Double.toString(onestock2.points.get(onestock2.points.size()-1).first));
 						
 						
-							if(response && MainActivity.graphs.size()>cisco2.graphPos)
+							if(response && MainActivity.graphs.size()>onestock2.graphPos)
 							 {
-								graphView2.appendData(new GraphViewData(cisco2.points.get(cisco2.points.size()-1).second ,cisco2.points.get(cisco2.points.size()-1).first), true, 1000);
-								cisco2.gvs=graphView2;
-								MainActivity.graphs.get(cisco2.graphPos).setManualYAxisBounds(cisco2.maxY, cisco2.minY);
-								cisco2.pos=iter-5;
+								graphView2.appendData(new GraphViewData(onestock2.points.get(onestock2.points.size()-1).second ,onestock2.points.get(onestock2.points.size()-1).first), true, 1000);
+								onestock2.gvs=graphView2;
+								MainActivity.graphs.get(onestock2.graphPos).setManualYAxisBounds(onestock2.maxY, onestock2.minY);
+								onestock2.pos=iter-5;
 							}
 						 }
 					}

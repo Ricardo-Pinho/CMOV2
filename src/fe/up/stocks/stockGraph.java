@@ -16,9 +16,10 @@ public class stockGraph {
 	public int pos, graphPos;
 	public Calendar beginDate, endDate;
 	public ArrayList<Pair<Double,Long>> points;
+	public ArrayList<Date> times;
 	public Double minY, maxY;
-	public boolean turnLeft;
-	public GraphViewSeries gvs;
+	public boolean turnLeft, monthPeriod=true;
+	public GraphViewSeries gvs, gvs2;
 	public stockGraph()
 	{
 		NoPoints=0;
@@ -29,6 +30,7 @@ public class stockGraph {
 		turnLeft=true;
 		minY=Double.MAX_VALUE;
 		maxY=-Double.MAX_VALUE;
+		times = new ArrayList<Date>();
 		points = new ArrayList<Pair<Double,Long>>();
 	}
 	

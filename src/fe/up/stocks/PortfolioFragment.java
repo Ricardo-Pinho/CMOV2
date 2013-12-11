@@ -32,6 +32,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -102,20 +103,26 @@ public class PortfolioFragment extends Fragment {
 			@Override
 			protected View doInBackground(View... params) {
 				
-				for(int i=0; i<MainActivity.usr.portfolios.size();i++)
-				{
-					Portfolio  port = MainActivity.usr.portfolios.get(i);
-					for(int j=0; j<port.stocks.size();j++)
-			        {
-						if(port.stocks.get(j).unitPrice==0.01)
-						{
+
 						HttpURLConnection con = null;
 						String payload = "Error";
 						double val=0;
 						try {
-							  
+							String urlString = "http://finance.yahoo.com/d/quotes?f=sl1d1t1v&s=";
+							for(int i=0; i<MainActivity.usr.portfolios.size();i++)
+							{
+								Portfolio  port = MainActivity.usr.portfolios.get(i);
+								for(int j=0; j<port.stocks.size();j++)
+						        {
+									if(i==0 && j==0)
+										urlString=urlString.concat(port.stocks.get(j).subName);
+									else
+										urlString=urlString.concat(","+port.stocks.get(j).subName);
+						        }
+							}
+							  Log.d("urlString", urlString);
 						      // Build RESTful query (GET)
-						      URL url = new URL("http://finance.yahoo.com/d/quotes?f=sl1d1t1v&s="+port.stocks.get(j).subName);
+						      URL url = new URL(urlString);
 						      //Log.d("url", "http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+MainActivity.sgraph.get(i).stockAbrev);
 						      con = (HttpURLConnection) url.openConnection();
 						      con.setReadTimeout(10000);
@@ -128,26 +135,34 @@ public class PortfolioFragment extends Fragment {
 						      
 						      // Read results from the query
 						      BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8" ));
-						      while((payload = reader.readLine())!=null)
-						      {
-
+						      for(int i=0; i<MainActivity.usr.portfolios.size();i++)
+								{
+									Portfolio  port = MainActivity.usr.portfolios.get(i);
+									for(int j=0; j<port.stocks.size();j++)
+							        {
+						     /* while((payload = reader.readLine())!=null)
+						      {*/
+									  if((payload = reader.readLine())==null)
+										 break;
 						    		  //Log.d("payload", payload);
 						    		  String [] split = payload.split(",");
 						    		  val=Double.parseDouble(split[1]);
-						    		  MainActivity.usr.portfolios.get(i).stocks.get(j).unitPrice=val;
+						    		  if(port.stocks.get(j).unitPrice==0.01)
+										{
+						    			  MainActivity.usr.portfolios.get(i).stocks.get(j).unitPrice=val;
+										}
+						    		  MainActivity.usr.portfolios.get(i).stocks.get(j).currentPrice=val;
 						    		  
-						      }
-						     
+						      //}
+							        }
+								}
 						      reader.close();
 							
 						  } catch (IOException e) {
 							  Log.d("error", e.getMessage());
 						} finally {
 						  if (con != null)
-						    con.disconnect();
-							}
-						}
-			        }
+						    con.disconnect();		        
 				}
 				MainActivity.usr.Save();
 				return params[0];
@@ -255,6 +270,7 @@ public class PortfolioFragment extends Fragment {
 											    public void onClick(DialogInterface dialog, int whichButton) {
 											    	MainActivity.usr.portfolios.get(Counter).Name = input.getText().toString();
 											    	MainActivity.usr.Save();
+											    	MainActivity.inPortfolio=true;
 											    	dialog.cancel();
 											    	/*if(!addKeyboard)
 											    	{
@@ -346,38 +362,48 @@ public class PortfolioFragment extends Fragment {
 						        // create a new TableRow
 						        TableRow row = new TableRow(getActivity());
 						        TableRow.LayoutParams rowParams = new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT);
-						        rowParams.setMargins(40, 20, 40, 20);
+						        //rowParams.setMargins(40, 20, 40, 20);
 						        row.setLayoutParams(rowParams);
 						        //row.setGravity(Gravity.CENTER);
-						 
-
+						        TableRow.LayoutParams rowElems = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT);
+						        rowElems.setMargins(0, 10, 0, 10);
+						        rowElems.weight=1;
+						        
 						        if(port.stocks.size()>0)
 						        {
 							        // create a new TextView
 							        TextView t = new TextView(getActivity());
-							        // set the text to "text xx"       
+							        // set the text to "text xx"
+							        t.setLayoutParams(rowElems);
+							        t.setGravity(Gravity.CENTER);
 							        t.setText("Name");
 							        t.setTextSize(25);
 							        t.setTextColor(Color.WHITE);
 							        
 							     // create a new TextView
 							        TextView t2 = new TextView(getActivity());
-							        // set the text to "text xx"       
+							        // set the text to "text xx"
+							        t2.setLayoutParams(rowElems);
+							        t2.setGravity(Gravity.CENTER);
 							        t2.setText("Share Number");
 							        t2.setTextSize(25);
 							        t2.setTextColor(Color.WHITE);
 							        
 							     // create a new TextView
 							        TextView t3 = new TextView(getActivity());
-							        // set the text to "text xx"       
+							        // set the text to "text xx"
+							        t3.setLayoutParams(rowElems);
 							        t3.setText("Price/Share");
+							        t3.setGravity(Gravity.CENTER);
 							        t3.setTextSize(25);
 							        t3.setTextColor(Color.WHITE);
 							        
 							     // create a new TextView
 							        TextView t4 = new TextView(getActivity());
-							        // set the text to "text xx"       
+							        // set the text to "text xx"
+							        t4.setLayoutParams(rowElems);
 							        t4.setText("Options");
+							        t4.setGravity(Gravity.CENTER);
 							        t4.setTextSize(25);
 							        t4.setTextColor(Color.WHITE);
 							        
@@ -385,6 +411,29 @@ public class PortfolioFragment extends Fragment {
 							        row.addView(t);
 							        row.addView(t2);
 							        row.addView(t3);
+							        
+							        if(getActivity().getResources().getBoolean(R.bool.is_landscape))
+							        {
+								        TextView t6 = new TextView(getActivity());
+								        // set the text to "text xx"
+								        t6.setLayoutParams(rowElems);
+								        t6.setText("Current Value");
+								        t6.setGravity(Gravity.CENTER);
+								        t6.setTextSize(25);
+								        t6.setTextColor(Color.WHITE);
+								        row.addView(t6);
+							        	
+							        	TextView t5 = new TextView(getActivity());
+								        // set the text to "text xx"
+								        t5.setLayoutParams(rowElems);
+								        t5.setText("Total Value");
+								        t5.setGravity(Gravity.CENTER);
+								        t5.setTextSize(25);
+								        t5.setTextColor(Color.WHITE);
+								        row.addView(t5);
+								       
+							        }
+							        
 							        row.addView(t4);
 							        // add the TableRow to the TableLayout
 							        table.addView(row,new TableLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
@@ -402,21 +451,27 @@ public class PortfolioFragment extends Fragment {
 
 								        // create a new TextView
 								        TextView t = new TextView(getActivity());
-								        // set the text to "text xx"       
+								        // set the text to "text xx"
+								        t.setLayoutParams(rowElems);
+								        t.setGravity(Gravity.CENTER);
 								        t.setText(port.stocks.get(j).Name);
 								        t.setTextSize(25);
 								        t.setTextColor(Color.WHITE);
 								        
 								     // create a new TextView
 								        TextView t2 = new TextView(getActivity());
-								        // set the text to "text xx"       
+								        // set the text to "text xx"
+								        t2.setLayoutParams(rowElems);
+								        t2.setGravity(Gravity.CENTER);
 								        t2.setText(Integer.toString(port.stocks.get(j).NoStocks));
 								        t2.setTextSize(25);
 								        t2.setTextColor(Color.WHITE);
 								        
 								     // create a new TextView
 								        TextView t3 = new TextView(getActivity());
-								        // set the text to "text xx"       
+								        // set the text to "text xx"
+								        t3.setLayoutParams(rowElems);
+								        t3.setGravity(Gravity.CENTER);
 								        t3.setText("$"+Double.toString(port.stocks.get(j).unitPrice));
 								        t3.setTextSize(25);
 								        t3.setTextColor(Color.WHITE);
@@ -426,23 +481,51 @@ public class PortfolioFragment extends Fragment {
 								        stockrow.addView(t2);
 								        stockrow.addView(t3);
 								        
+								        if(getActivity().getResources().getBoolean(R.bool.is_landscape))
+								        {
+									        TextView t6 = new TextView(getActivity());
+									        // set the text to "text xx"
+									        t6.setLayoutParams(rowElems);
+									        t6.setText("$"+Double.toString(port.stocks.get(j).currentPrice));
+									        t6.setGravity(Gravity.CENTER);
+									        t6.setTextSize(25);
+									        t6.setTextColor(Color.WHITE);
+									        stockrow.addView(t6);
+									        
+									        TextView t5 = new TextView(getActivity());
+									        // set the text to "text xx"
+									        t5.setLayoutParams(rowElems);
+									        double totalval = port.stocks.get(j).currentPrice*port.stocks.get(j).NoStocks;
+									        totalval=Math.round(totalval*100.0)/100.0;
+									        t5.setText("$"+Double.toString(totalval));
+									        t5.setGravity(Gravity.CENTER);
+									        t5.setTextSize(25);
+									        t5.setTextColor(Color.WHITE);
+									        stockrow.addView(t5);
+								        }
+								        
 								        LinearLayout l4 = new LinearLayout(getActivity());
 										l4.setOrientation(LinearLayout.HORIZONTAL);
+										l4.setLayoutParams(rowElems);
+								        l4.setGravity(Gravity.CENTER);
 										//LL.setPadding(16,16,16,16);
 										//l4.setGravity(Gravity.CENTER);
-										LayoutParams LLParamsl4 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
-										l4.setLayoutParams(LLParamsl4);
+										//LayoutParams LLParamsl4 = new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT);
+										//l4.setLayoutParams(LLParamsl4);
 										
-										LayoutParams LLParamsl5 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+										TableRow.LayoutParams LLParamsl5 = new TableRow.LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
 										LLParamsl5.setMargins(10, 0, 0, 0);
 										
-										LayoutParams LLParamsl6 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+										TableRow.LayoutParams LLParamsl6 = new TableRow.LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
 										LLParamsl6.setMargins(0, 0, 10, 0);
 										
+										
+										final Stock st = port.stocks.get(j);
+										final int stockNum = j;
 										ImageButton edit = new ImageButton(getActivity());
 								        edit.setImageResource(R.drawable.ic_action_edit);
 								        edit.setOnClickListener(buttonClickListener);
-								        edit.setBackgroundResource(R.drawable.button_customize3);
+								        edit.setBackgroundResource(R.drawable.button_customize4);
 								        edit.setLayoutParams(LLParamsl6);
 								        edit.setTag(1);
 								        edit.setId(j);
@@ -453,29 +536,82 @@ public class PortfolioFragment extends Fragment {
 													View p = (View)v.getParent();
 													View parent = (View)p.getParent();
 													AlertDialog.Builder editalert = new AlertDialog.Builder(getActivity());
-
+													LinearLayout.LayoutParams tvl = new LinearLayout.LayoutParams(
+															LinearLayout.LayoutParams.WRAP_CONTENT,
+													        LinearLayout.LayoutParams.WRAP_CONTENT);
+													tvl.setMargins(0, 10, 0, 10);
 													editalert.setTitle("Edit Stock");
-
-
+													LinearLayout layout = new LinearLayout(getActivity());
+													layout.setOrientation(LinearLayout.VERTICAL);
+													layout.setGravity(Gravity.CENTER);
+													
+													final TextView tv = new TextView(getActivity());
+													tv.setText("Name");
+													tv.setLayoutParams(tvl);
+													//tv.setTextColor(getResources().getColor(R.color.blue_middle));
+													tv.setTextSize(20);
+													tv.setGravity(Gravity.CENTER);
+													layout.addView(tv);
+													
 													final EditText input = new EditText(getActivity());
-													input.setText(MainActivity.usr.portfolios.get(Counter).Name);
+													input.setText(st.Name);
+													input.setTextColor(getResources().getColor(R.color.blue_middle));
+													input.setGravity(Gravity.CENTER);
+													input.setInputType(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
 													LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-													        400,
+													        300,
 													        LinearLayout.LayoutParams.WRAP_CONTENT);
 													input.setLayoutParams(lp);
-													editalert.setView(input);
+													layout.addView(input);
+													
+													final TextView tv2 = new TextView(getActivity());
+													tv2.setText("Abbreviation");
+													//tv2.setTextColor(getResources().getColor(R.color.blue_middle));
+													tv2.setTextSize(20);
+													tv2.setLayoutParams(tvl);
+													tv2.setGravity(Gravity.CENTER);
+													layout.addView(tv2);
+													
+													final EditText input2 = new EditText(getActivity());
+													input2.setText(st.subName);
+													input2.setTextColor(getResources().getColor(R.color.blue_middle));
+													input2.setGravity(Gravity.CENTER);
+													input2.setInputType(InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+													LinearLayout.LayoutParams lp2 = new LinearLayout.LayoutParams(
+													        120,
+													        LinearLayout.LayoutParams.WRAP_CONTENT);
+													input2.setLayoutParams(lp2);
+													layout.addView(input2);
+													
+													final TextView tv3 = new TextView(getActivity());
+													tv3.setTextSize(20);
+													tv3.setLayoutParams(tvl);
+													tv3.setGravity(Gravity.CENTER);
+													//tv3.setTextColor(getResources().getColor(R.color.blue_middle));
+													tv3.setText("Share Number");
+													layout.addView(tv3);
+													
+													final EditText input3 = new EditText(getActivity());
+													input3.setText(Integer.toString(st.NoStocks));
+													input3.setTextColor(getResources().getColor(R.color.blue_middle));
+													input3.setGravity(Gravity.CENTER);
+													input3.setInputType(InputType.TYPE_CLASS_NUMBER);
+													LinearLayout.LayoutParams lp3 = new LinearLayout.LayoutParams(
+													        110,
+													        LinearLayout.LayoutParams.WRAP_CONTENT);
+													input3.setLayoutParams(lp3);
+													layout.addView(input3);
+													
+													editalert.setView(layout);
 
-													editalert.setPositiveButton("ok", new DialogInterface.OnClickListener() {
+													editalert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
 													    public void onClick(DialogInterface dialog, int whichButton) {
-													    	MainActivity.usr.portfolios.get(Counter).Name = input.getText().toString();
+													    	MainActivity.usr.portfolios.get(Counter).stocks.get(stockNum).Name = input.getText().toString();
+													    	MainActivity.usr.portfolios.get(Counter).stocks.get(stockNum).subName = input2.getText().toString();
+													    	MainActivity.usr.portfolios.get(Counter).stocks.get(stockNum).NoStocks = Integer.parseInt(input3.getText().toString());
 													    	MainActivity.usr.Save();
+													    	MainActivity.inPortfolio=true;
 													    	dialog.cancel();
-													    	/*if(!addKeyboard)
-													    	{
-													    		InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-													    		imm.toggleSoftInput(InputMethodManager.RESULT_SHOWN, 0);
-													    		addKeyboard=true;
-													    	}*/
 													    	
 													    	getActivity().finish();
 											                Intent intent = new Intent(getActivity(), MainMenu.class);
@@ -484,6 +620,12 @@ public class PortfolioFragment extends Fragment {
 													    	//getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new PortfolioFragment()).commit();
 													
 
+													    }
+													});
+													
+													editalert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+													    public void onClick(DialogInterface dialog, int whichButton) {
+													    	dialog.cancel();
 													    }
 													});
 													// create alert dialog
@@ -506,7 +648,7 @@ public class PortfolioFragment extends Fragment {
 								        ImageButton remove = new ImageButton(getActivity());
 								        remove.setImageResource(R.drawable.ic_action_remove);
 								        remove.setOnClickListener(buttonClickListener);
-								        remove.setBackgroundResource(R.drawable.button_customize3);
+								        remove.setBackgroundResource(R.drawable.button_customize4);
 								        remove.setLayoutParams(LLParamsl5);
 								        remove.setTag(3);
 								        remove.setId(j);
@@ -523,10 +665,14 @@ public class PortfolioFragment extends Fragment {
 													    public void onClick(DialogInterface dialog, int whichButton) {
 													    	MainActivity.usr.portfolios.get(Counter).stocks.remove(Stockcounter);
 													    	MainActivity.usr.Save();
+													    	MainActivity.inPortfolio=true;
 													    	//MainActivity.inPortfolio=true;
 													    	//getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new PortfolioFragment()).commit();
 													    	dialog.cancel();
-													    	getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new PortfolioFragment()).commit();
+													    	getActivity().finish();
+											                Intent intent = new Intent(getActivity(), MainMenu.class);
+															startActivity(intent);
+															getActivity().overridePendingTransition  (R.anim.fade_in, R.anim.fade_out);
 													    	/*getActivity().finish();
 											                Intent intent = new Intent(getActivity(), MainMenu.class);
 															startActivity(intent);
@@ -546,17 +692,9 @@ public class PortfolioFragment extends Fragment {
 													alertDialog.show();
 
 												}
-									        });
-								        //l4.addView(remove);
-								        
-								     // create a new TextView
-								        TextView t4 = new TextView(getActivity());
-								        // set the text to "text xx"       
-								        t4.setText(port.stocks.get(j).Name);
-								        t4.setTextSize(25);
-								        t4.setTextColor(Color.WHITE);
-								        
-								        stockrow.addView(remove);
+									        });		        
+								        l4.addView(remove);
+								        stockrow.addView(l4);
 								        
 								        // add the TableRow to the TableLayout
 								        table.addView(stockrow,new TableLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
@@ -577,8 +715,10 @@ public class PortfolioFragment extends Fragment {
 								
 								LayoutParams LLParams2 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
 								LLParams2.setMargins(20, 20, 20, 20);
+								
 								final Button addingButton = new Button(getActivity());
 								addingButton.setText("Add Stock");
+								addingButton.setPadding(20, 20, 20, 20);
 								addingButton.setTextSize(30);
 								addingButton.setTextColor(Color.WHITE);
 								addingButton.setGravity(Gravity.CENTER);
@@ -586,7 +726,6 @@ public class PortfolioFragment extends Fragment {
 								addingButton.setBackgroundResource(R.drawable.button_customize3);
 								addingButton.setLayoutParams(LLParams2);
 								addingButton.setTag(1);
-								addingButton.setPadding(8,8,8,8);
 								addingButton.setOnClickListener(new OnClickListener() {
 							       	 
 										@Override
@@ -671,7 +810,7 @@ public class PortfolioFragment extends Fragment {
 												//addingStockButton.setBackgroundColor(getResources().getColor(R.color.blue_dark));
 												addingStockButton.setLayoutParams(LLParams2);
 												addingStockButton.setTag(1);
-												addingStockButton.setPadding(16,16,16,16);
+												addingButton.setPadding(20, 20, 20, 20);
 												addingStockButton.setOnClickListener(new OnClickListener() {
 											       	 
 														@Override
@@ -680,11 +819,13 @@ public class PortfolioFragment extends Fragment {
 															Stock s = new Stock(Integer.parseInt(AddStockNum.getText().toString()),date,AddStockName.getText().toString(),AddStockAbbrev.getText().toString());
 															MainActivity.usr.portfolios.get(Counter).stocks.add(s);
 															MainActivity.usr.Save();
-															LLaddStock.removeAllViews();
-															addingStock=false;
+															MainActivity.inPortfolio=true;
 															
-										                	addingButton.setText("Add Stock");
-															getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new PortfolioFragment()).commit();		
+															addingButton.setText("Add Stock");
+										                	getActivity().finish();
+											                Intent intent = new Intent(getActivity(), MainMenu.class);
+															startActivity(intent);
+															getActivity().overridePendingTransition  (R.anim.fade_in, R.anim.fade_out);	
 														}
 											        });
 													LLaddStock.addView(addingStockButton);
@@ -778,7 +919,7 @@ public class PortfolioFragment extends Fragment {
 													//addingStockButton.setBackgroundColor(getResources().getColor(R.color.blue_dark));
 													addingStockButton.setLayoutParams(LLParams2);
 													addingStockButton.setTag(1);
-													addingStockButton.setPadding(16,16,16,16);
+													addingButton.setPadding(20, 20, 20, 20);
 													addingStockButton.setOnClickListener(new OnClickListener() {
 												       	 
 															@Override
@@ -787,11 +928,13 @@ public class PortfolioFragment extends Fragment {
 																Stock s = new Stock(Integer.parseInt(AddStockNum.getText().toString()),date,AddStockName.getText().toString(),AddStockAbbrev.getText().toString());
 																MainActivity.usr.portfolios.get(Counter).stocks.add(s);
 																MainActivity.usr.Save();
-																LLaddStock.removeAllViews();
-																addingStock=false;
+																MainActivity.inPortfolio=true;
 																
 											                	addingButton.setText("Add Stock");
-																getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new PortfolioFragment()).commit();		
+											                	getActivity().finish();
+												                Intent intent = new Intent(getActivity(), MainMenu.class);
+																startActivity(intent);
+																getActivity().overridePendingTransition  (R.anim.fade_in, R.anim.fade_out);	
 															}
 												        });
 														LLaddStock.addView(addingStockButton);
@@ -932,7 +1075,7 @@ public class PortfolioFragment extends Fragment {
 					addingButton.setBackgroundResource(R.drawable.button_customize3);
 					addingButton.setLayoutParams(LLParams);
 					addingButton.setTag(1);
-					addingButton.setPadding(8,8,8,8);
+					addingButton.setPadding(20, 20, 20, 20);
 					addingButton.setOnClickListener(new OnClickListener() {
 				       	 
 							@Override

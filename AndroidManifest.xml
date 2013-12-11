@@ -39,6 +39,11 @@
             android:name="MainMenu"
             android:theme="@style/AppBaseTheme" >
         </activity>
+        <activity 
+            android:label="@string/app_name" 
+            android:name="org.achartengine.GraphicalActivity"
+            android:theme="@style/AppBaseTheme" >
+        </activity>
     </application>
 
 </manifest>

@@ -3,6 +3,7 @@ package fe.up.stocks;
 
 
 import java.util.ArrayList;
+import java.util.Calendar;
 
 import com.jjoe64.graphview.GraphView;
 
@@ -26,7 +27,10 @@ public class MainActivity extends Activity {
 	public static ArrayList<realtimeGraph> rgraph = new ArrayList<realtimeGraph>();
 	public static ArrayList<GraphView> graphs = new ArrayList<GraphView>();
 	public static User usr = new User();
-	public static boolean inPortfolio=false;
+	public static Calendar beginDate=Calendar.getInstance();
+	public static Calendar endDate=Calendar.getInstance();
+	public static boolean inPortfolio=false, inProfile=false, monthPeriodGraph=true, betterCharts=false, otherPeriod=false;
+	public static int portIndex=0, stockIndex=0;
 	private Button login;
 	private Button register;
 	@Override

@@ -19,12 +19,17 @@ import android.util.Log;
 
 public class MainMenu extends AbstractNavDrawerActivity {
    
-	private int menuIter=5;
+	private int menuIter=4;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if ( savedInstanceState == null ) {
-        	if(MainActivity.inPortfolio)
+        	if(MainActivity.inProfile)
+        	{
+        		MainActivity.inProfile=false;
+        		getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new ProfileFragment()).commit();
+        	}
+        else if(MainActivity.inPortfolio)
         	{
         		MainActivity.inPortfolio=false;
         		getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new PortfolioFragment()).commit();
@@ -36,13 +41,16 @@ public class MainMenu extends AbstractNavDrawerActivity {
    
     @Override
     protected NavDrawerActivityConfiguration getNavDrawerConfiguration() {
-       
-        NavDrawerItem[] menu = new NavDrawerItem[2*MainActivity.usr.portfolios.size()+17]; 
-                menu[0] = NavMenuSection.create( 100, "Account");
+       int stockNumber =0;
+       for(int i=0; i<MainActivity.usr.portfolios.size();i++)
+		{
+			stockNumber+=MainActivity.usr.portfolios.get(i).stocks.size();
+		}
+        NavDrawerItem[] menu = new NavDrawerItem[2*MainActivity.usr.portfolios.size()+stockNumber+16]; 
+                menu[0] = NavMenuSection.create( 100, MainActivity.usr.Name+"'s Account");
                 menu[1] = NavMenuItem.create(101,"Profile", "navdrawer_profile", true, this);
                 menu[2] = NavMenuItem.create(102, "Manage Portfolio", "navdrawer_manage_portfolio", true, this);
-        		menu[3] = NavMenuItem.create(103, "Manage Stocks", "navdrawer_manage_stocks", true, this);
-				menu[4] = NavMenuItem.create(104, "Options", "navdrawer_options", true, this);
+				menu[3] = NavMenuItem.create(103, "Options", "navdrawer_options", true, this);
 				
 				for(int i=0; i<MainActivity.usr.portfolios.size();i++)
 				{
@@ -52,6 +60,12 @@ public class MainMenu extends AbstractNavDrawerActivity {
 					index=index+1;
 					menu[menuIter] = NavMenuItem.create(index, "Show Stocks", "navdrawer_"+MainActivity.usr.portfolios.get(i).Name, true, this);
 					menuIter=menuIter+1;
+					for(int j=0; j<MainActivity.usr.portfolios.get(i).stocks.size();j++)
+					{
+						int stIndex = index+j+1;
+						menu[menuIter] = NavMenuItem.create(stIndex, MainActivity.usr.portfolios.get(i).stocks.get(j).subName, "navdrawer_"+MainActivity.usr.portfolios.get(i).stocks.get(j).subName, true, this);
+						menuIter=menuIter+1;
+					}
 				}
 				
 				menu[menuIter] = NavMenuSection.create(200, "Stock Market");
@@ -98,16 +112,13 @@ public class MainMenu extends AbstractNavDrawerActivity {
     protected void onNavItemSelected(int id) {
         switch ((int)id) {
         case 101:
-        	getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new MainFragment()).commit();
+        	getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new ProfileFragment()).commit();
             break;
         case 102:
             getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new PortfolioFragment()).commit();
             break;
         case 103:
-            getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new AppleFragment()).commit();
-            break;
-        case 104:
-            getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new CiscoFragment()).commit();
+            getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new OptionsFragment()).commit();
             break;
         case 201:
         	getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new MainFragment()).commit();
@@ -142,6 +153,19 @@ public class MainMenu extends AbstractNavDrawerActivity {
         case 211:
             getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new OracleFragment()).commit();
             break;
+        default:
+        	{
+        		int k = id % 1000-1;
+        		MainActivity.portIndex=id/1000;
+        		if(k==0)
+        			getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new StockFragment()).commit();
+        		else
+        		{
+        			MainActivity.stockIndex=k-1;
+        			getSupportFragmentManager().beginTransaction().replace(R.id.content_frame, new OneStockFragment()).commit();
+        		}
+        	}
+        	break;
         }
     }
 }

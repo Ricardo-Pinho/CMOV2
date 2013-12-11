@@ -31,6 +31,7 @@ import com.jjoe64.graphview.GraphViewSeries.GraphViewSeriesStyle;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -56,6 +57,7 @@ import android.widget.LinearLayout.LayoutParams;
 public class AmazonFragment extends Fragment {
 
 	private final SimpleDateFormat dateFormat = new SimpleDateFormat("d/M");
+	private final SimpleDateFormat dateYearFormat = new SimpleDateFormat("MMM");
 	private ProgressDialog pd;
 	private boolean firstRunning=true;
 	private stockGraph amazon;
@@ -108,18 +110,42 @@ public class AmazonFragment extends Fragment {
 				sg.id=1;
 				sg.endDate = Calendar.getInstance();
 				sg.beginDate = Calendar.getInstance();
-				sg.beginDate.add(Calendar.DATE, -31);
+				if(MainActivity.monthPeriodGraph && !MainActivity.otherPeriod)
+				{
+					sg.beginDate.add(Calendar.DATE, -31);
+					sg.monthPeriod=true;
+				}
+				else if(!MainActivity.otherPeriod)
+				{
+					sg.beginDate.add(Calendar.DATE, -365);
+					sg.monthPeriod=false;
+				}
+				else
+				{
+					sg.beginDate = MainActivity.beginDate;
+					sg.endDate = MainActivity.endDate;
+				}
+				if(MainActivity.monthPeriodGraph)
+				{
+					sg.beginDate.add(Calendar.DATE, -31);
+					sg.monthPeriod=true;
+				}
+			else
+				{
+					sg.beginDate.add(Calendar.DATE, -365);
+					sg.monthPeriod=false;
+				}
 				boolean exists=false;
 				for(int i=0; i< MainActivity.sgraph.size();i++)
 				{
 					if(sg.stockName.equals(MainActivity.sgraph.get(i).stockName))
 					{
-						if(sg.beginDate.DAY_OF_MONTH==MainActivity.sgraph.get(i).beginDate.DAY_OF_MONTH 
-								&& sg.beginDate.MONTH == MainActivity.sgraph.get(i).beginDate.MONTH
-								&& sg.beginDate.YEAR == MainActivity.sgraph.get(i).beginDate.YEAR
-								&& sg.endDate.DAY_OF_MONTH==MainActivity.sgraph.get(i).endDate.DAY_OF_MONTH 
-								&& sg.endDate.MONTH == MainActivity.sgraph.get(i).endDate.MONTH
-								&& sg.endDate.YEAR == MainActivity.sgraph.get(i).endDate.YEAR)
+						if(sg.beginDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).beginDate.get(Calendar.DAY_OF_MONTH)
+								&& sg.beginDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH)
+								&& sg.beginDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).beginDate.get(Calendar.YEAR)
+								&& sg.endDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).endDate.get(Calendar.DAY_OF_MONTH) 
+								&& sg.endDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH)
+								&& sg.endDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).endDate.get(Calendar.YEAR))
 						{
 							exists=true;
 							amazon = MainActivity.sgraph.get(i);
@@ -154,8 +180,13 @@ public class AmazonFragment extends Fragment {
 				    	  int eday = amazon.endDate.get(Calendar.DAY_OF_MONTH);
 				    	  int eyear = amazon.endDate.get(Calendar.YEAR);
 				          // Build RESTful query (GET)
-				          URL url = new URL("http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+amazon.stockAbrev);
-				          //Log.d("url", "http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+MainActivity.sgraph.get(i).stockAbrev);
+				    	  URL url;
+				    	  if(MainActivity.monthPeriodGraph)
+				    		  url = new URL("http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+amazon.stockAbrev);
+				    	  else
+					          url = new URL("http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=m&s="+amazon.stockAbrev);
+
+				    	  //Log.d("url", "http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+MainActivity.sgraph.get(i).stockAbrev);
 				          con = (HttpURLConnection) url.openConnection();
 				          con.setReadTimeout(10000);
 				          con.setConnectTimeout(15000);
@@ -168,6 +199,7 @@ public class AmazonFragment extends Fragment {
 				          // Read results from the query
 				          BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8" ));
 				          sg = amazon;
+				          int timercounter=0;
 				          while((payload = reader.readLine())!=null)
 				          {
 				        	  if(first)
@@ -188,7 +220,9 @@ public class AmazonFragment extends Fragment {
 									  sg.minY=val;
 								  if(sg.maxY<val)
 									  sg.maxY=val;
-				        		  Pair<Double,Long> p = new Pair<Double,Long>(val,dat.getTime());
+								  sg.times.add(dat);
+				        		  Pair<Double,Long> p = new Pair<Double,Long>(val,(long)timercounter);
+				        		  timercounter=timercounter+1;
 				        		  //Log.d("pair", Double.parseDouble(split[4])+" and "+dat.getTime());
 				        		  sg.points.add(p);
 				        	  }
@@ -259,15 +293,19 @@ public class AmazonFragment extends Fragment {
 								GraphView graphView;
 								graphView = new LineGraphView(
 											getActivity()
-											, amazon.stockName
+											, ""
 									);
 								((LineGraphView) graphView).setDrawBackground(true);
 								
 
 								graphView.addSeries(exampleSeries);
+								graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
+								graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
+								graphView.getGraphViewStyle().setVerticalLabelsWidth(100);
+								graphView.getGraphViewStyle().setTextSize(20);
 								LinearLayout LL = new LinearLayout(getActivity());
 								LL.setOrientation(LinearLayout.VERTICAL);
-								LayoutParams LLParams = new LayoutParams(LayoutParams.MATCH_PARENT,350);
+								LayoutParams LLParams = new LayoutParams(LayoutParams.MATCH_PARENT,400);
 								LLParams.gravity=Gravity.CENTER;
 								LL.setLayoutParams(LLParams);
 								LL.setWeightSum(2);
@@ -276,7 +314,7 @@ public class AmazonFragment extends Fragment {
 								LL3.setOrientation(LinearLayout.VERTICAL);
 								LayoutParams LLParams3 = new LayoutParams(LayoutParams.MATCH_PARENT,250);
 								LLParams3.weight=1;
-								LL3.setId(1);
+								//LL3.setId(1);
 								LL3.setLayoutParams(LLParams3);
 
 								MainActivity.graphs.add(graphView);
@@ -289,6 +327,7 @@ public class AmazonFragment extends Fragment {
 							}
 								else
 							{
+							
 							GraphViewData[] data = new GraphViewData[5];
 							int k=4;
 							int position=5;
@@ -332,8 +371,10 @@ public class AmazonFragment extends Fragment {
 								@Override
 								public String formatLabel(double value, boolean isValueX) {
 									if (isValueX) {
-										Date d = new Date((long) value);
-										return dateFormat.format(d);
+										if(amazon.monthPeriod)
+											return dateFormat.format(amazon.times.get((int) value));
+										else
+											return dateYearFormat.format(amazon.times.get((int) value));
 									}
 									else{
 										double d= value;
@@ -356,6 +397,8 @@ public class AmazonFragment extends Fragment {
 							graphView.getGraphViewStyle().setNumHorizontalLabels(5);
 							graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
 							graphView.getGraphViewStyle().setTextSize(20);
+							graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
+							graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
 							graphView.setId(graphPos);
 							
 							
@@ -585,6 +628,17 @@ public class AmazonFragment extends Fragment {
 						       	 
 									@Override
 									public void onClick(View v) {
+										if(MainActivity.betterCharts)
+										{
+													LinearGraph lin = new LinearGraph();
+													lin.sgraph = amazon;
+											    	Intent lineIntent = lin.getIntent(getActivity());
+											        startActivity(lineIntent);
+
+
+										}
+										else
+										{
 										View p = (View)v.getParent();
 										View parent = (View)p.getParent();
 					    					stockGraph sg = MainActivity.sgraph.get(graphPos);
@@ -601,13 +655,17 @@ public class AmazonFragment extends Fragment {
 					        					graphView.getGraphViewStyle().setNumHorizontalLabels(5);
 					        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(graphPos).maxY, MainActivity.sgraph.get(graphPos).minY);
 					        					graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
+					        					graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
+												graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
 					        					graphView.getGraphViewStyle().setTextSize(20);
 					        					graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
 					        						@Override
 					        						public String formatLabel(double value, boolean isValueX) {
 					        							if (isValueX) {
-					        								Date d = new Date((long) value);
-					        								return dateFormat.format(d);
+					        								if(amazon.monthPeriod)
+																return dateFormat.format(amazon.times.get((int) value));
+															else
+																return dateYearFormat.format(amazon.times.get((int) value));
 					        							}
 					        							else{
 					        								double d= value;
@@ -633,7 +691,7 @@ public class AmazonFragment extends Fragment {
 					        					MainActivity.graphs.get(amazon.graphPos).startAnimation(animation);
 					        				}
 					        				//Log.i("test", "got here2");
-
+									}
 						        });
 					        LL2.addView(btn1);
 					        
@@ -648,6 +706,16 @@ public class AmazonFragment extends Fragment {
 						       	 
 									@Override
 									public void onClick(View v) {
+										if(MainActivity.betterCharts)
+										{
+													BarGraph bar = new BarGraph();
+													bar.sgraph = amazon;
+											    	Intent lineIntent = bar.getIntent(getActivity());
+											        startActivity(lineIntent);
+
+										}
+										else
+										{
 										View p = (View)v.getParent();
 										View parent = (View)p.getParent();
 					    					stockGraph sg = MainActivity.sgraph.get(graphPos);
@@ -667,12 +735,16 @@ public class AmazonFragment extends Fragment {
 					        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(graphPos).maxY, MainActivity.sgraph.get(graphPos).minY);
 					        					graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
 					        					graphView.getGraphViewStyle().setTextSize(20);
+					        					graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
+												graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
 					        					graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
 					        						@Override
 					        						public String formatLabel(double value, boolean isValueX) {
 					        							if (isValueX) {
-					        								Date d = new Date((long) value);
-					        								return dateFormat.format(d);
+					        								if(amazon.monthPeriod)
+																return dateFormat.format(amazon.times.get((int) value));
+															else
+																return dateYearFormat.format(amazon.times.get((int) value));
 					        							}
 					        							else{
 					        								double d= value;
@@ -696,6 +768,7 @@ public class AmazonFragment extends Fragment {
 
 					        					MainActivity.graphs.get(amazon.graphPos).startAnimation(animation);
 					        				}
+									}
 						        });
 					        LL2.addView(btn2);
 					        
@@ -871,7 +944,6 @@ public class AmazonFragment extends Fragment {
 						        
 					        TextView title = new TextView(getActivity());
 					        title.setText(amazon.stockName);
-					        title.setId(5);
 					        title.setGravity(Gravity.CENTER);
 					        title.setTextColor(Color.WHITE);
 					        title.setTextSize(23f);
@@ -952,6 +1024,8 @@ public class AmazonFragment extends Fragment {
 								graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
 								graphView.getGraphViewStyle().setNumHorizontalLabels(5);
 								graphView.getGraphViewStyle().setTextSize(20);
+								graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
+								graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
 								
 								graphView.setManualYAxisBounds(amazon2.maxY, amazon2.minY);
 								
@@ -1013,7 +1087,7 @@ public class AmazonFragment extends Fragment {
 								//amazon.graphPos=MainActivity.graphs.size()-1;
 								//LL3.addView(MainActivity.graphs.get(MainActivity.graphs.size()-1));
 								LayoutParams LLParamsR4 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
-								LLParamsR4.setMargins(20, 0, 20, 0);
+								LLParamsR4.setMargins(10, 0, 10, 0);
 								
 								LayoutParams LLParamsR6 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
 								LLParamsR6.setMargins(60, 0, 0, 0);
@@ -1133,12 +1207,12 @@ public class AmazonFragment extends Fragment {
 												 	mHandler.removeCallbacks(mTimer2);
 												 	((ImageButton) v).setImageResource(R.drawable.ic_action_play);
 												 	amazon2.isPlay=true;
-												 	MainActivity.rgraph.set(graphPos,amazon2);
+												 	MainActivity.rgraph.set(graphPos2,amazon2);
 											       }
 											       else{
 											    	   amazon2.isPlay=false;
 											    	   mHandler.post(mTimer2);
-											    	   MainActivity.rgraph.set(graphPos,amazon2);
+											    	   MainActivity.rgraph.set(graphPos2,amazon2);
 											    	   ((ImageButton) v).setImageResource(R.drawable.ic_action_pause); 
 											       }
 										}
@@ -1216,6 +1290,8 @@ public class AmazonFragment extends Fragment {
 									graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
 									graphView.getGraphViewStyle().setNumHorizontalLabels(5);
 									graphView.getGraphViewStyle().setTextSize(20);
+									graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
+									graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
 									
 									graphView.setManualYAxisBounds(amazon2.maxY, amazon2.minY);
 									
@@ -1552,10 +1628,10 @@ public class AmazonFragment extends Fragment {
 						//Log.d("damn", "ok");
 						if(amazon2!=null && !amazon2.isPlay)
 						{
-							Log.d("point", Long.toString(amazon2.points.get(amazon2.points.size()-1).second)+"-"+Double.toString(amazon2.points.get(amazon2.points.size()-1).first));
+							//Log.d("point", Long.toString(amazon2.points.get(amazon2.points.size()-1).second)+"-"+Double.toString(amazon2.points.get(amazon2.points.size()-1).first));
 						
 						
-							if(response)
+							if(response && MainActivity.graphs.size()>amazon2.graphPos)
 							 {
 								graphView2.appendData(new GraphViewData(amazon2.points.get(amazon2.points.size()-1).second ,amazon2.points.get(amazon2.points.size()-1).first), true, 1000);
 								amazon2.gvs=graphView2;

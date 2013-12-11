@@ -31,6 +31,7 @@ import com.jjoe64.graphview.GraphViewSeries.GraphViewSeriesStyle;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -56,6 +57,7 @@ import android.widget.LinearLayout.LayoutParams;
 public class IBMFragment extends Fragment {
 
 	private final SimpleDateFormat dateFormat = new SimpleDateFormat("d/M");
+	private final SimpleDateFormat dateYearFormat = new SimpleDateFormat("MMM");
 	private ProgressDialog pd;
 	private boolean firstRunning=true;
 	private stockGraph ibm;
@@ -108,18 +110,32 @@ public class IBMFragment extends Fragment {
 				sg.id=8;
 				sg.endDate = Calendar.getInstance();
 				sg.beginDate = Calendar.getInstance();
-				sg.beginDate.add(Calendar.DATE, -31);
+				if(MainActivity.monthPeriodGraph && !MainActivity.otherPeriod)
+				{
+					sg.beginDate.add(Calendar.DATE, -31);
+					sg.monthPeriod=true;
+				}
+				else if(!MainActivity.otherPeriod)
+				{
+					sg.beginDate.add(Calendar.DATE, -365);
+					sg.monthPeriod=false;
+				}
+				else
+				{
+					sg.beginDate = MainActivity.beginDate;
+					sg.endDate = MainActivity.endDate;
+				}
 				boolean exists=false;
 				for(int i=0; i< MainActivity.sgraph.size();i++)
 				{
 					if(sg.stockName.equals(MainActivity.sgraph.get(i).stockName))
 					{
-						if(sg.beginDate.DAY_OF_MONTH==MainActivity.sgraph.get(i).beginDate.DAY_OF_MONTH 
-								&& sg.beginDate.MONTH == MainActivity.sgraph.get(i).beginDate.MONTH
-								&& sg.beginDate.YEAR == MainActivity.sgraph.get(i).beginDate.YEAR
-								&& sg.endDate.DAY_OF_MONTH==MainActivity.sgraph.get(i).endDate.DAY_OF_MONTH 
-								&& sg.endDate.MONTH == MainActivity.sgraph.get(i).endDate.MONTH
-								&& sg.endDate.YEAR == MainActivity.sgraph.get(i).endDate.YEAR)
+						if(sg.beginDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).beginDate.get(Calendar.DAY_OF_MONTH)
+								&& sg.beginDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH)
+								&& sg.beginDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).beginDate.get(Calendar.YEAR)
+								&& sg.endDate.get(Calendar.DAY_OF_MONTH)==MainActivity.sgraph.get(i).endDate.get(Calendar.DAY_OF_MONTH) 
+								&& sg.endDate.get(Calendar.MONTH) == MainActivity.sgraph.get(i).endDate.get(Calendar.MONTH)
+								&& sg.endDate.get(Calendar.YEAR) == MainActivity.sgraph.get(i).endDate.get(Calendar.YEAR))
 						{
 							exists=true;
 							ibm = MainActivity.sgraph.get(i);
@@ -154,8 +170,13 @@ public class IBMFragment extends Fragment {
 				    	  int eday = ibm.endDate.get(Calendar.DAY_OF_MONTH);
 				    	  int eyear = ibm.endDate.get(Calendar.YEAR);
 				          // Build RESTful query (GET)
-				          URL url = new URL("http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+ibm.stockAbrev);
-				          //Log.d("url", "http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+MainActivity.sgraph.get(i).stockAbrev);
+				    	  URL url;
+				    	  if(MainActivity.monthPeriodGraph)
+				    		  url = new URL("http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+ibm.stockAbrev);
+				    	  else
+					          url = new URL("http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=m&s="+ibm.stockAbrev);
+
+				    	  //Log.d("url", "http://ichart.finance.yahoo.com/table.txt?a="+bmonth+"&b="+bday+"&c="+byear+"&d="+emonth+"&e="+eday+"&f="+eyear+"&g=d&s="+MainActivity.sgraph.get(i).stockAbrev);
 				          con = (HttpURLConnection) url.openConnection();
 				          con.setReadTimeout(10000);
 				          con.setConnectTimeout(15000);
@@ -168,6 +189,7 @@ public class IBMFragment extends Fragment {
 				          // Read results from the query
 				          BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8" ));
 				          sg = ibm;
+				          int timercounter=0;
 				          while((payload = reader.readLine())!=null)
 				          {
 				        	  if(first)
@@ -188,7 +210,9 @@ public class IBMFragment extends Fragment {
 									  sg.minY=val;
 								  if(sg.maxY<val)
 									  sg.maxY=val;
-				        		  Pair<Double,Long> p = new Pair<Double,Long>(val,dat.getTime());
+								  sg.times.add(dat);
+				        		  Pair<Double,Long> p = new Pair<Double,Long>(val,(long)timercounter);
+				        		  timercounter=timercounter+1;
 				        		  //Log.d("pair", Double.parseDouble(split[4])+" and "+dat.getTime());
 				        		  sg.points.add(p);
 				        	  }
@@ -259,15 +283,19 @@ public class IBMFragment extends Fragment {
 								GraphView graphView;
 								graphView = new LineGraphView(
 											getActivity()
-											, ibm.stockName
+											, ""
 									);
 								((LineGraphView) graphView).setDrawBackground(true);
 								
 
 								graphView.addSeries(exampleSeries);
+								graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
+								graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
+								graphView.getGraphViewStyle().setVerticalLabelsWidth(100);
+								graphView.getGraphViewStyle().setTextSize(20);
 								LinearLayout LL = new LinearLayout(getActivity());
 								LL.setOrientation(LinearLayout.VERTICAL);
-								LayoutParams LLParams = new LayoutParams(LayoutParams.MATCH_PARENT,350);
+								LayoutParams LLParams = new LayoutParams(LayoutParams.MATCH_PARENT,400);
 								LLParams.gravity=Gravity.CENTER;
 								LL.setLayoutParams(LLParams);
 								LL.setWeightSum(2);
@@ -276,7 +304,7 @@ public class IBMFragment extends Fragment {
 								LL3.setOrientation(LinearLayout.VERTICAL);
 								LayoutParams LLParams3 = new LayoutParams(LayoutParams.MATCH_PARENT,250);
 								LLParams3.weight=1;
-								LL3.setId(1);
+								//LL3.setId(1);
 								LL3.setLayoutParams(LLParams3);
 
 								MainActivity.graphs.add(graphView);
@@ -289,6 +317,7 @@ public class IBMFragment extends Fragment {
 							}
 								else
 							{
+							
 							GraphViewData[] data = new GraphViewData[5];
 							int k=4;
 							int position=5;
@@ -332,8 +361,10 @@ public class IBMFragment extends Fragment {
 								@Override
 								public String formatLabel(double value, boolean isValueX) {
 									if (isValueX) {
-										Date d = new Date((long) value);
-										return dateFormat.format(d);
+										if(ibm.monthPeriod)
+											return dateFormat.format(ibm.times.get((int) value));
+										else
+											return dateYearFormat.format(ibm.times.get((int) value));
 									}
 									else{
 										double d= value;
@@ -356,6 +387,8 @@ public class IBMFragment extends Fragment {
 							graphView.getGraphViewStyle().setNumHorizontalLabels(5);
 							graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
 							graphView.getGraphViewStyle().setTextSize(20);
+							graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
+							graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
 							graphView.setId(graphPos);
 							
 							
@@ -585,6 +618,17 @@ public class IBMFragment extends Fragment {
 						       	 
 									@Override
 									public void onClick(View v) {
+										if(MainActivity.betterCharts)
+										{
+													LinearGraph lin = new LinearGraph();
+													lin.sgraph = ibm;
+											    	Intent lineIntent = lin.getIntent(getActivity());
+											        startActivity(lineIntent);
+
+
+										}
+										else
+										{
 										View p = (View)v.getParent();
 										View parent = (View)p.getParent();
 					    					stockGraph sg = MainActivity.sgraph.get(graphPos);
@@ -601,13 +645,17 @@ public class IBMFragment extends Fragment {
 					        					graphView.getGraphViewStyle().setNumHorizontalLabels(5);
 					        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(graphPos).maxY, MainActivity.sgraph.get(graphPos).minY);
 					        					graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
+					        					graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
+												graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
 					        					graphView.getGraphViewStyle().setTextSize(20);
 					        					graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
 					        						@Override
 					        						public String formatLabel(double value, boolean isValueX) {
 					        							if (isValueX) {
-					        								Date d = new Date((long) value);
-					        								return dateFormat.format(d);
+					        								if(ibm.monthPeriod)
+																return dateFormat.format(ibm.times.get((int) value));
+															else
+																return dateYearFormat.format(ibm.times.get((int) value));
 					        							}
 					        							else{
 					        								double d= value;
@@ -633,7 +681,7 @@ public class IBMFragment extends Fragment {
 					        					MainActivity.graphs.get(ibm.graphPos).startAnimation(animation);
 					        				}
 					        				//Log.i("test", "got here2");
-
+									}
 						        });
 					        LL2.addView(btn1);
 					        
@@ -648,6 +696,16 @@ public class IBMFragment extends Fragment {
 						       	 
 									@Override
 									public void onClick(View v) {
+										if(MainActivity.betterCharts)
+										{
+													BarGraph bar = new BarGraph();
+													bar.sgraph = ibm;
+											    	Intent lineIntent = bar.getIntent(getActivity());
+											        startActivity(lineIntent);
+
+										}
+										else
+										{
 										View p = (View)v.getParent();
 										View parent = (View)p.getParent();
 					    					stockGraph sg = MainActivity.sgraph.get(graphPos);
@@ -667,12 +725,16 @@ public class IBMFragment extends Fragment {
 					        					graphView.setManualYAxisBounds(MainActivity.sgraph.get(graphPos).maxY, MainActivity.sgraph.get(graphPos).minY);
 					        					graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
 					        					graphView.getGraphViewStyle().setTextSize(20);
+					        					graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
+												graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
 					        					graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
 					        						@Override
 					        						public String formatLabel(double value, boolean isValueX) {
 					        							if (isValueX) {
-					        								Date d = new Date((long) value);
-					        								return dateFormat.format(d);
+					        								if(ibm.monthPeriod)
+																return dateFormat.format(ibm.times.get((int) value));
+															else
+																return dateYearFormat.format(ibm.times.get((int) value));
 					        							}
 					        							else{
 					        								double d= value;
@@ -696,6 +758,7 @@ public class IBMFragment extends Fragment {
 
 					        					MainActivity.graphs.get(ibm.graphPos).startAnimation(animation);
 					        				}
+									}
 						        });
 					        LL2.addView(btn2);
 					        
@@ -871,7 +934,6 @@ public class IBMFragment extends Fragment {
 						        
 					        TextView title = new TextView(getActivity());
 					        title.setText(ibm.stockName);
-					        title.setId(5);
 					        title.setGravity(Gravity.CENTER);
 					        title.setTextColor(Color.WHITE);
 					        title.setTextSize(23f);
@@ -905,6 +967,8 @@ public class IBMFragment extends Fragment {
 											iter=MainActivity.rgraph.get(i).points.size();
 											Log.d("points", MainActivity.rgraph.get(i).points.get(MainActivity.rgraph.get(i).points.size()-1).second+" "+MainActivity.rgraph.get(i).points.get(MainActivity.rgraph.get(i).points.size()-1).first
 													);
+											if (ibm2.isPlay)
+												mHandler.removeCallbacks(mTimer2);
 											break;
 										}
 									}
@@ -950,6 +1014,8 @@ public class IBMFragment extends Fragment {
 								graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
 								graphView.getGraphViewStyle().setNumHorizontalLabels(5);
 								graphView.getGraphViewStyle().setTextSize(20);
+								graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
+								graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
 								
 								graphView.setManualYAxisBounds(ibm2.maxY, ibm2.minY);
 								
@@ -1011,13 +1077,13 @@ public class IBMFragment extends Fragment {
 								//ibm.graphPos=MainActivity.graphs.size()-1;
 								//LL3.addView(MainActivity.graphs.get(MainActivity.graphs.size()-1));
 								LayoutParams LLParamsR4 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
-								LLParamsR4.setMargins(20, 0, 20, 0);
+								LLParamsR4.setMargins(10, 0, 10, 0);
 								
 								LayoutParams LLParamsR6 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
-								LLParamsR6.setMargins(80, 0, 0, 0);
+								LLParamsR6.setMargins(60, 0, 0, 0);
 								
 								LayoutParams LLParamsR5 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
-								LLParamsR5.setMargins(0, 0, 80, 0);
+								LLParamsR5.setMargins(0, 0, 60, 0);
 								
 								LayoutParams LLParamsR7 = new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
 								LLParamsR7.setMargins(20, 0, 0, 0);
@@ -1059,53 +1125,7 @@ public class IBMFragment extends Fragment {
 					        					MainActivity.rgraph.get(graphPos2).pos=sg.pos-4;
 					        				}
 					        				
-					        				
-					    					/*int position= sg.pos-5;
-					        					int end = sg.pos;
-					        					if(!sg.turnLeft)
-				        						{
-				        							position=position-5;
-				        							end=sg.pos-5;
-				        							sg.turnLeft=true;
-				        						}
-					        					
-					        					if(position<0)
-					        						position=0;
-					        					
-					        					int diff = end-position;
-					        					MainActivity.rgraph.get(graphPos2).pos=position;
-					        					if(diff<5)
-					        					{
-					        						begin = begin-(5-diff);
-					        					}
-					        					int k=4;
-					        					GraphViewData[] data = new GraphViewData[5];
-					        					for (int j=begin; j<position; j++) {
-													long x=sg.points.get(j).second;
-													double y=sg.points.get(j).first;
-													data[k] = new GraphViewData(x, y); // next day
-													k--;
-												}
-					        					GraphViewSeries exampleSeries = new GraphViewSeries(data);
-					        					sg.gvs = exampleSeries;
-					        					MainActivity.rgraph.set(graphPos2, sg);
-					        					MainActivity.graphs.get(ibm2.graphPos).removeAllSeries();
-					        					MainActivity.graphs.get(ibm2.graphPos).addSeries(exampleSeries); // data*/
-					        					
-					        					/*MainActivity.graphs.get(i).setCustomLabelFormatter(new CustomLabelFormatter() {
-					        						@Override
-					        						public String formatLabel(double value, boolean isValueX) {
-					        							if (isValueX) {
-					        								Date d = new Date((long) value);
-					        								return dateFormat.format(d);
-					        							}
-					        							else{
-					        								return ("$"+Double.toString(value));
-					        							}
-					        						}
-					        					});*/
-					        				}
-					        				//Log.i("test", "got here2");
+									}
 						        });
 											
 						        LLR2.addView(btnrm1);
@@ -1177,12 +1197,12 @@ public class IBMFragment extends Fragment {
 												 	mHandler.removeCallbacks(mTimer2);
 												 	((ImageButton) v).setImageResource(R.drawable.ic_action_play);
 												 	ibm2.isPlay=true;
-												 	MainActivity.rgraph.set(graphPos,ibm2);
+												 	MainActivity.rgraph.set(graphPos2,ibm2);
 											       }
 											       else{
 											    	   ibm2.isPlay=false;
 											    	   mHandler.post(mTimer2);
-											    	   MainActivity.rgraph.set(graphPos,ibm2);
+											    	   MainActivity.rgraph.set(graphPos2,ibm2);
 											    	   ((ImageButton) v).setImageResource(R.drawable.ic_action_pause); 
 											       }
 										}
@@ -1209,6 +1229,103 @@ public class IBMFragment extends Fragment {
 										}
 							        });
 						        LLR2.addView(btnR2);
+						        
+						        ImageButton btnR4 = new ImageButton(getActivity());
+						        btnR4.setImageResource(R.drawable.ic_action_discard);
+						        btnR4.setOnClickListener(buttonClickListener);
+						        btnR4.setBackgroundResource(R.drawable.button_customize);
+						        btnR4.setLayoutParams(LLParamsR4);
+						        btnR4.setTag(7);
+						        btnR4.setId(graphPos2);
+						        btnR4.setOnClickListener(new OnClickListener() {
+							       	 
+									@Override
+									public void onClick(View v) {
+										View p = (View)v.getParent();
+										View parent = (View)p.getParent();
+										if(!ibm2.isPlay)
+											mHandler.removeCallbacksAndMessages(mTimer2);
+										GraphViewData[] data = new GraphViewData[0];
+										//position=5;
+										ibm2.pos=0;
+										/*for (int j=0; j<31; j++) {
+											long x=ibm2.points.get(j).second;
+											double y=ibm2.points.get(j).first;
+											data[j] = new GraphViewData(x, y); // next day
+											//k--;
+										}*/
+									    graphView2 = new GraphViewSeries(data);
+									    graphView2.getStyle().color = Color.RED;
+									    ibm2.points= new ArrayList<Pair<Double,Long>>();
+									    MainActivity.rgraph.set(graphPos2,ibm2);
+									    ibm2.maxY=(double) ibm.points.get(ibm.points.size()-1).first;
+										ibm2.minY=(double) 0;
+										ibm2.times=new ArrayList<String>();
+										//MainActivity.graphs.get(ibm2.graphPos).removeAllSeries();
+				    					//MainActivity.graphs.get(ibm2.graphPos).addSeries(graphView2);
+				    					
+				    					
+				    					GraphView graphView = new LineGraphView(
+												getActivity()
+												, ""/*ibm2.stockName+" Realtime Graph"*/
+										);
+										//((LineGraphView) graphView).setDrawBackground(true);
+										
+										
+									graphView.addSeries(graphView2); // data
+									ibm2.gvs = graphView2;
+									MainActivity.rgraph.set(graphPos2, ibm2);
+									graphView.setViewPort(ibm2.pos, 4);
+									graphView.setScrollable(true);
+									graphView.getGraphViewStyle().setVerticalLabelsWidth(120);
+									graphView.getGraphViewStyle().setNumHorizontalLabels(5);
+									graphView.getGraphViewStyle().setTextSize(20);
+									graphView.getGraphViewStyle().setVerticalLabelsColor(Color.WHITE);
+									graphView.getGraphViewStyle().setHorizontalLabelsColor(Color.WHITE);
+									
+									graphView.setManualYAxisBounds(ibm2.maxY, ibm2.minY);
+									
+									graphView.setCustomLabelFormatter(new CustomLabelFormatter() {
+										@Override
+										public String formatLabel(double value, boolean isValueX) {
+											if (isValueX) {
+												if(value<0 || value>=ibm2.times.size())
+													{
+														Log.d(Double.toString(value),Integer.toString(ibm2.times.size()));
+														return "0:00";
+													}
+												else
+													return ibm2.times.get((int) value);
+											}
+											else{
+														double d= value;
+														String text = Double.toString(Math.abs(d));
+														int integerPlaces = text.indexOf('.');
+														int decimalPlaces = text.length() - integerPlaces - 1;
+														if(decimalPlaces>3)
+														{
+															value=Math.round(d*100.0)/100.0;
+														}
+														return ("$"+Double.toString(value));
+											}
+										}
+									});
+				    					iter=0;
+				    					LinearLayout ln = (LinearLayout) parent.findViewById(v.getId());
+			        					Animation animation = AnimationUtils.loadAnimation(getActivity(), R.anim.right_slide_graph);
+			        					animation.setStartOffset(0);
+			        					ln.removeAllViews();
+			        					MainActivity.graphs.set(ibm2.graphPos, graphView);
+			        					ln.addView(MainActivity.graphs.get(ibm2.graphPos));
+
+			        					MainActivity.graphs.get(ibm2.graphPos).startAnimation(animation);
+			        					if(!ibm2.isPlay)
+			        						mHandler.post(mTimer2);
+										
+									}	
+
+						        });
+							        LLR2.addView(btnR4);
 						        
 						        ImageButton btnR3 = new ImageButton(getActivity());
 						        btnR3.setImageResource(R.drawable.ic_action_next_item);
@@ -1243,6 +1360,7 @@ public class IBMFragment extends Fragment {
 
 						        });
 							        LLR2.addView(btnR3);
+							       
 							        
 							        ImageButton btnrm2 = new ImageButton(getActivity());
 									btnrm2.setImageResource(R.drawable.ic_action_fast_forward);
@@ -1397,6 +1515,8 @@ public class IBMFragment extends Fragment {
 						
 					@Override
 					protected Void doInBackground(Void... arg0) {
+						if(ibm2!=null && !ibm2.isPlay)
+						{
 						HttpURLConnection con = null;
 						String payload = "Error";
 						int numDays=0;
@@ -1482,11 +1602,13 @@ public class IBMFragment extends Fragment {
 						      	MainActivity.rgraph.set(graphPos2,ibm2);
 						      //}
 						      reader.close();
+							
 						  } catch (IOException e) {
 							  Log.d("error", e.getMessage());
 						} finally {
 						  if (con != null)
 						    con.disconnect();
+							}
 						}
 						return null;
 					}
@@ -1494,16 +1616,20 @@ public class IBMFragment extends Fragment {
 					@Override
 					protected void onPostExecute(Void result) {
 						//Log.d("damn", "ok");
-						Log.d("point", Long.toString(ibm2.points.get(ibm2.points.size()-1).second)+"-"+Double.toString(ibm2.points.get(ibm2.points.size()-1).first));
+						if(ibm2!=null && !ibm2.isPlay)
+						{
+							//Log.d("point", Long.toString(ibm2.points.get(ibm2.points.size()-1).second)+"-"+Double.toString(ibm2.points.get(ibm2.points.size()-1).first));
 						
-							if(response)
+						
+							if(response && MainActivity.graphs.size()>ibm2.graphPos)
 							 {
-								graphView2.appendData(new GraphViewData(ibm2.points.get(ibm2.points.size()-1).second ,ibm2.points.get(ibm2.points.size()-1).first), true, 31);
+								graphView2.appendData(new GraphViewData(ibm2.points.get(ibm2.points.size()-1).second ,ibm2.points.get(ibm2.points.size()-1).first), true, 1000);
 								ibm2.gvs=graphView2;
 								MainActivity.graphs.get(ibm2.graphPos).setManualYAxisBounds(ibm2.maxY, ibm2.minY);
 								ibm2.pos=iter-5;
 							}
 						 }
+					}
 						
 				};
 				

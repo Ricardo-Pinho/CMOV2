@@ -10,8 +10,8 @@ public class Stock implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	public int NoStocks;
-	public double unitPrice;
+	public int NoStocks, idsgraph, idrgraph;
+	public double unitPrice, currentPrice;
 	public Calendar BoughtTime;
 	public String Name, subName;
 	//public boolean visited=false;
